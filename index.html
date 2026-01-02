@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dot Fight - Version 11.0</title>
+    <title>Dot Fight - Version 12.0</title>
     <style>
         :root {
             --board-width: 300px; --board-height: 500px; --dot-size: 40px; --pawn-size: 32px;
@@ -11,59 +11,30 @@
             --bg-color: #2c3e50; --text-color: #ecf0f1; --dot-color: #7f8c8d; --line-color: #95a5a6;
             --container-bg: #34495e; --danger-color: #e74c3c;
         }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex;
-            justify-content: center; align-items: center; height: 100vh; margin: 0;
-            background-color: var(--bg-color); color: var(--text-color);
-        }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: var(--bg-color); color: var(--text-color); }
         .hidden { display: none !important; }
         .menu { text-align: center; }
         .menu h1 { font-size: 3.5em; margin-bottom: 30px; color: var(--highlight-color); }
-        .menu-button {
-            display: block; width: 250px; padding: 15px; font-size: 1.2em;
-            margin: 15px auto; cursor: pointer; border: 2px solid var(--line-color);
-            border-radius: 8px; background-color: transparent; color: var(--text-color);
-            transition: background-color 0.3s, color 0.3s;
-        }
+        .menu-button { display: block; width: 250px; padding: 15px; font-size: 1.2em; margin: 15px auto; cursor: pointer; border: 2px solid var(--line-color); border-radius: 8px; background-color: transparent; color: var(--text-color); transition: 0.3s; }
         .menu-button:hover { background-color: var(--highlight-color); color: var(--bg-color); border-color: var(--highlight-color); }
         .options-group { margin: 15px 0; }
-        .option-button {
-            display: inline-block; padding: 10px 15px; font-size: 1em; margin: 5px;
-            cursor: pointer; border: 2px solid var(--line-color); border-radius: 5px;
-            background-color: var(--container-bg); color: var(--text-color);
-        }
+        .option-button { display: inline-block; padding: 10px 15px; font-size: 1em; margin: 5px; cursor: pointer; border: 2px solid var(--line-color); border-radius: 5px; background-color: var(--container-bg); color: var(--text-color); }
         .option-button.selected { background-color: var(--blue-color); border-color: var(--blue-color); }
-        .game-wrapper {
-            background-color: var(--container-bg); padding: 20px; border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5); width: var(--board-width);
-            transition: width 0.5s ease-in-out;
-        }
+        .game-wrapper { background-color: var(--container-bg); padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.5); width: var(--board-width); }
         .hud { margin-bottom: 20px; text-align: center; }
         #turn-indicator { font-size: 1.8em; font-weight: bold; height: 40px; }
-        #game-mode-indicator { font-size: 0.9em; color: #bdc3c7; margin-top: 5px;}
-        #board-container {
-            position: relative; width: var(--board-width); height: var(--board-height);
-            transition: transform 0.5s ease-in-out; margin: 0 auto;
-        }
+        #board-container { position: relative; width: var(--board-width); height: var(--board-height); margin: 0 auto; transition: 0.5s; }
         #board-container.rotated { transform: rotate(90deg); }
         .line { position: absolute; background-color: var(--line-color); transform-origin: 0 0; height: 2px; pointer-events: none;}
-        .dot {
-            position: absolute; width: var(--dot-size); height: var(--dot-size);
-            background-color: var(--dot-color); border-radius: 50%; cursor: pointer;
-            transform: translate(-50%, -50%); display: flex;
-            justify-content: center; align-items: center; box-shadow: 0 0 5px rgba(0,0,0,0.5);
-        }
-        .pawn { width: var(--pawn-size); height: var(--pawn-size); border-radius: 50%; pointer-events: none; }
+        .dot { position: absolute; width: var(--dot-size); height: var(--dot-size); background-color: var(--dot-color); border-radius: 50%; cursor: pointer; transform: translate(-50%, -50%); display: flex; justify-content: center; align-items: center; }
+        .pawn { width: var(--pawn-size); height: var(--pawn-size); border-radius: 50%; pointer-events: none; transition: 0.2s; }
         .red-pawn { background-color: var(--red-color); }
         .blue-pawn { background-color: var(--blue-color); }
         .selected { box-shadow: 0 0 15px 5px var(--highlight-color); }
         .possible-move { background-color: var(--move-color); }
         .penalty-pawn { box-shadow: 0 0 15px 5px var(--danger-color); cursor: pointer !important; }
         .controls { margin-top: 20px; text-align: center; }
-        .game-button {
-            padding: 8px 15px; font-size: 0.9em; cursor: pointer; border: none;
-            border-radius: 5px; background-color: #555; color: var(--text-color); margin: 0 5px;
-        }
+        .game-button { padding: 8px 15px; font-size: 0.9em; cursor: pointer; border: none; border-radius: 5px; background-color: #555; color: var(--text-color); margin: 0 5px; }
     </style>
 </head>
 <body>
@@ -75,20 +46,20 @@
 </div>
 
 <div id="settings-screen" class="menu hidden">
-    <h1>AI Match</h1>
-    <div id="ai-difficulty-group" class="options-group hidden">
-        <h3>Skill</h3>
-        <button class="option-button" data-ai-skill="Easy">Easy</button>
+    <h1>AI Battle</h1>
+    <div class="options-group">
+        <h3>Difficulty</h3>
+        <button class="option-button selected" data-ai-skill="Easy">Easy</button>
         <button class="option-button" data-ai-skill="Medium">Medium</button>
-        <button class="option-button selected" data-ai-skill="Hard">Hard</button>
+        <button class="option-button" data-ai-skill="Hard">Hard</button>
     </div>
     <div class="options-group">
-        <h3>Rules</h3>
+        <h3>Rule Set</h3>
         <button class="option-button selected" data-difficulty="Beginner">Beginner</button>
         <button class="option-button" data-difficulty="Intermediate">Intermediate</button>
         <button class="option-button" data-difficulty="Expert">Expert</button>
     </div>
-    <button id="start-game-btn" class="menu-button">Fight!</button>
+    <button id="start-game-btn" class="menu-button">Start Match</button>
 </div>
 
 <div class="game-wrapper hidden">
@@ -112,23 +83,13 @@
             captureLines: [ [1,2,3], [10,9,11], [2,4,6,7,9] ]
         };
         
-        let state = {
-            pawns: {}, currentTurn: 'Red', mode: 'HvAI', aiSkill: 'Hard', difficulty: 'Beginner',
-            selectedId: null, mustCaptureId: null, winner: null, history: [], gamePhase: 'playing'
-        };
+        let state = { pawns: {}, currentTurn: 'Red', mode: 'HvAI', aiSkill: 'Easy', difficulty: 'Beginner', selectedId: null, mustCaptureId: null, winner: null, history: [], gamePhase: 'playing' };
 
-        const mainMenu = document.getElementById('main-menu');
-        const settingsScreen = document.getElementById('settings-screen');
-        const gameWrapper = document.querySelector('.game-wrapper');
-        const boardContainer = document.getElementById('board-container');
+        const mainMenu = document.getElementById('main-menu'), settingsScreen = document.getElementById('settings-screen'), gameWrapper = document.querySelector('.game-wrapper'), boardContainer = document.getElementById('board-container');
 
         function initGame() {
-            state.pawns = {
-                'r1':{id:'r1', player:'Red', pos:10}, 'r2':{id:'r2', player:'Red', pos:9}, 'r3':{id:'r3', player:'Red', pos:11},
-                'b1':{id:'b1', player:'Blue', pos:1}, 'b2':{id:'b2', player:'Blue', pos:2}, 'b3':{id:'b3', player:'Blue', pos:3}
-            };
-            state.currentTurn = 'Red'; state.winner = null; state.selectedId = null; 
-            state.mustCaptureId = null; state.history = []; state.gamePhase = 'playing';
+            state.pawns = { 'r1':{id:'r1',player:'Red',pos:10}, 'r2':{id:'r2',player:'Red',pos:9}, 'r3':{id:'r3',player:'Red',pos:11}, 'b1':{id:'b1',player:'Blue',pos:1}, 'b2':{id:'b2',player:'Blue',pos:2}, 'b3':{id:'b3',player:'Blue',pos:3} };
+            state.currentTurn = 'Red'; state.winner = null; state.selectedId = null; state.mustCaptureId = null; state.history = []; state.gamePhase = 'playing';
             renderBoard(); updateHUD();
         }
 
@@ -137,39 +98,26 @@
             state.currentTurn = (state.currentTurn === 'Red') ? 'Blue' : 'Red';
             state.selectedId = null; state.mustCaptureId = null;
             updateHUD();
-
             if (!playerHasMoves(state.currentTurn)) { applyPenalty("Stalemate"); return; }
             if (state.mode === 'HvAI' && state.currentTurn === 'Blue') setTimeout(runAILogic, 800);
         }
 
-        function playerHasMoves(player) {
-            return Object.values(state.pawns).filter(p => p.player === player).some(p => getAllLegalMoves(p.id, state.pawns).length > 0);
-        }
+        function playerHasMoves(player) { return Object.values(state.pawns).filter(p => p.player === player).some(p => getAllLegalMoves(p.id, state.pawns).length > 0); }
 
         function executeMove(pawnId, toPos, isCapture, capturedPos) {
-            const pawn = state.pawns[pawnId];
-            pawn.pos = toPos;
+            const pawn = state.pawns[pawnId]; pawn.pos = toPos;
             if (isCapture) {
                 const victim = Object.values(state.pawns).find(p => p.pos === capturedPos);
                 if (victim) delete state.pawns[victim.id];
-                if (getCaptures(pawnId, state.pawns).length > 0) {
-                    state.mustCaptureId = pawnId;
-                    renderBoard();
-                    if (state.mode === 'HvAI' && state.currentTurn === 'Blue') setTimeout(runAILogic, 600);
-                    return;
-                }
+                if (getCaptures(pawnId, state.pawns).length > 0) { state.mustCaptureId = pawnId; renderBoard(); if (state.mode === 'HvAI' && state.currentTurn === 'Blue') setTimeout(runAILogic, 600); return; }
             }
-            const boardHash = JSON.stringify(state.pawns);
-            state.history.push(boardHash);
-            if (state.history.filter(h => h === boardHash).length >= 3) { applyPenalty("Repetition"); return; }
-            renderBoard();
-            if (!checkWin()) switchTurn();
+            const hash = JSON.stringify(state.pawns); state.history.push(hash);
+            if (state.history.filter(h => h === hash).length >= 3) { applyPenalty("Repetition"); return; }
+            renderBoard(); if (!checkWin()) switchTurn();
         }
 
         function applyPenalty(reason) {
-            const player = state.currentTurn;
-            const indicator = document.getElementById('turn-indicator');
-            indicator.innerText = `${reason}! Penalty.`;
+            const player = state.currentTurn; const indicator = document.getElementById('turn-indicator'); indicator.innerText = `${reason}!`;
             setTimeout(() => {
                 if (state.difficulty === 'Beginner') { switchTurn(); }
                 else if (state.difficulty === 'Intermediate') { state.gamePhase = 'penalty'; renderBoard(); }
@@ -177,80 +125,82 @@
             }, 1000);
         }
 
-        // --- BRAINY AI ENGINE ---
+        // --- ENHANCED AI ENGINE ---
         function runAILogic() {
-            if (state.winner || state.currentTurn !== 'Blue' || state.gamePhase !== 'penalty' === false && state.gamePhase !== 'playing') return;
-
-            const moves = [];
-            Object.values(state.pawns).filter(p => p.player === 'Blue').forEach(p => {
-                getAllLegalMoves(p.id, state.pawns).forEach(m => moves.push({pawnId: p.id, ...m}));
-            });
-
+            if (state.winner || state.currentTurn !== 'Blue' || state.gamePhase !== 'playing') return;
+            const moves = getAvailableMoves('Blue', state.pawns);
             if (moves.length === 0) return;
 
             let choice;
             if (state.aiSkill === 'Easy') {
-                choice = moves[Math.floor(Math.random() * moves.length)];
+                const safe = moves.filter(m => isMoveSafe(m.pawnId, m.to, state.pawns));
+                choice = safe.length > 0 ? safe[Math.floor(Math.random() * safe.length)] : moves[0];
             } else if (state.aiSkill === 'Medium') {
-                const caps = moves.filter(m => m.isCapture);
-                if (caps.length > 0) choice = caps[0];
-                else {
-                    const safe = moves.filter(m => isMoveSafe(m.pawnId, m.to, state.pawns));
-                    choice = safe.length > 0 ? safe[Math.floor(Math.random() * safe.length)] : moves[0];
-                }
+                choice = minimax(state.pawns, 2, true).move;
             } else {
-                // Hard AI: Minimax-style evaluation
-                let bestScore = -Infinity;
-                let bestMoves = [];
-                for (let m of moves) {
-                    let score = evaluateMove(m);
-                    if (score > bestScore) { bestScore = score; bestMoves = [m]; }
-                    else if (score === bestScore) { bestMoves.push(m); }
-                }
-                choice = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+                choice = minimax(state.pawns, 4, true).move; // Hard depth
             }
             executeMove(choice.pawnId, choice.to, choice.isCapture, choice.capturedPos);
         }
 
-        function evaluateMove(move) {
-            const mock = JSON.parse(JSON.stringify(state.pawns));
-            let score = 0;
+        function minimax(pawns, depth, isAI) {
+            const availMoves = getAvailableMoves(isAI ? 'Blue' : 'Red', pawns);
+            if (depth === 0 || availMoves.length === 0) return { score: evaluateBoard(pawns) };
 
-            // Material
-            if (move.isCapture) {
-                score += 100;
-                delete mock[Object.values(mock).find(p => p.pos === move.capturedPos).id];
+            let bestMove = availMoves[0];
+            if (isAI) {
+                let bestScore = -Infinity;
+                for (let m of availMoves) {
+                    const nextBoard = simulateMove(pawns, m);
+                    const res = minimax(nextBoard, depth - 1, false);
+                    if (res.score > bestScore) { bestScore = res.score; bestMove = m; }
+                }
+                return { score: bestScore, move: bestMove };
+            } else {
+                let bestScore = Infinity;
+                for (let m of availMoves) {
+                    const nextBoard = simulateMove(pawns, m);
+                    const res = minimax(nextBoard, depth - 1, true);
+                    if (res.score < bestScore) { bestScore = res.score; bestMove = m; }
+                }
+                return { score: bestScore, move: bestMove };
             }
-            mock[move.pawnId].pos = move.to;
+        }
 
-            // Vulnerability Check
-            if (!isMoveSafe(move.pawnId, move.to, mock)) score -= 60;
-
-            // Center Control (Dot 2 and 9 are crucial)
-            if (move.to === 2 || move.to === 9) score += 15;
-
-            // Mobility: How many moves will I have after this?
-            const nextMoves = [];
-            Object.values(mock).filter(p => p.player === 'Blue').forEach(p => {
-                nextMoves.push(...getSimples(p.id, mock));
+        function evaluateBoard(pawns) {
+            const pList = Object.values(pawns);
+            let score = (pList.filter(p => p.player === 'Blue').length - pList.filter(p => p.player === 'Red').length) * 100;
+            pList.forEach(p => {
+                const val = (p.pos === 2 || p.pos === 9) ? 15 : 0;
+                score += (p.player === 'Blue' ? val : -val);
             });
-            score += nextMoves.length;
-
             return score;
         }
 
+        function simulateMove(pawns, m) {
+            const next = JSON.parse(JSON.stringify(pawns));
+            next[m.pawnId].pos = m.to;
+            if (m.isCapture) { const v = Object.values(next).find(p => p.pos === m.capturedPos); if (v) delete next[v.id]; }
+            return next;
+        }
+
+        function getAvailableMoves(player, pawnSet) {
+            const res = [];
+            Object.values(pawnSet).filter(p => p.player === player).forEach(p => {
+                getAllLegalMoves(p.id, pawnSet).forEach(m => res.push({pawnId: p.id, ...m}));
+            });
+            const caps = res.filter(m => m.isCapture);
+            return caps.length > 0 ? caps : res;
+        }
+
         function isMoveSafe(pawnId, toPos, pawnSet) {
-            const mock = JSON.parse(JSON.stringify(pawnSet));
-            mock[pawnId].pos = toPos;
+            const mock = JSON.parse(JSON.stringify(pawnSet)); mock[pawnId].pos = toPos;
             return !Object.values(mock).filter(p => p.player === 'Red').some(r => getCaptures(r.id, mock).length > 0);
         }
 
-        // --- CORE UTILS ---
         function getAllLegalMoves(pawnId, pawnSet) {
             const caps = getCaptures(pawnId, pawnSet);
-            if (caps.length > 0) return caps;
-            if (state.mustCaptureId && state.mustCaptureId !== pawnId) return [];
-            return getSimples(pawnId, pawnSet);
+            return caps.length > 0 ? caps : getSimples(pawnId, pawnSet);
         }
 
         function getCaptures(pawnId, pawnSet) {
@@ -281,8 +231,7 @@
         }
 
         function checkWin() {
-            const r = Object.values(state.pawns).filter(p => p.player === 'Red').length;
-            const b = Object.values(state.pawns).filter(p => p.player === 'Blue').length;
+            const r = Object.values(state.pawns).filter(p => p.player === 'Red').length, b = Object.values(state.pawns).filter(p => p.player === 'Blue').length;
             if (r === 0) state.winner = 'Blue'; else if (b === 0) state.winner = 'Red';
             if (state.winner) { updateHUD(); return true; }
             return false;
@@ -291,36 +240,29 @@
         function renderBoard() {
             boardContainer.innerHTML = '';
             const drawn = new Set();
-            for (let startNode in boardData.adjacencies) {
-                boardData.adjacencies[startNode].forEach(endNode => {
-                    const key = [startNode, endNode].sort().join('-');
-                    if (!drawn.has(key)) {
-                        const p1 = boardData.dots[startNode], p2 = boardData.dots[endNode];
-                        const line = document.createElement('div');
-                        line.className = 'line';
-                        line.style.width = Math.hypot(p2.x - p1.x, p2.y - p1.y) + "px";
-                        line.style.left = p1.x + "px"; line.style.top = p1.y + "px";
-                        line.style.transform = `rotate(${Math.atan2(p2.y - p1.y, p2.x - p1.x)}rad)`;
-                        boardContainer.appendChild(line); drawn.add(key);
+            for (let s in boardData.adjacencies) {
+                boardData.adjacencies[s].forEach(e => {
+                    const k = [s, e].sort().join('-');
+                    if (!drawn.has(k)) {
+                        const p1 = boardData.dots[s], p2 = boardData.dots[e];
+                        const line = document.createElement('div'); line.className = 'line'; line.style.width = Math.hypot(p2.x - p1.x, p2.y - p1.y) + "px"; line.style.left = p1.x + "px"; line.style.top = p1.y + "px"; line.style.transform = `rotate(${Math.atan2(p2.y - p1.y, p2.x - p1.x)}rad)`;
+                        boardContainer.appendChild(line); drawn.add(k);
                     }
                 });
             }
             for (let id in boardData.dots) {
-                const d = boardData.dots[id];
-                const dotEl = document.createElement('div');
-                dotEl.className = 'dot'; dotEl.style.left = d.x + 'px'; dotEl.style.top = d.y + 'px';
-                dotEl.onclick = () => onDotClick(parseInt(id));
+                const d = boardData.dots[id], dotEl = document.createElement('div');
+                dotEl.className = 'dot'; dotEl.style.left = d.x + 'px'; dotEl.style.top = d.y + 'px'; dotEl.onclick = () => onDotClick(parseInt(id));
                 const pawn = Object.values(state.pawns).find(p => p.pos === parseInt(id));
                 if (pawn) {
-                    const pEl = document.createElement('div');
-                    pEl.className = `pawn ${pawn.player.toLowerCase()}-pawn`;
+                    const pEl = document.createElement('div'); pEl.className = `pawn ${pawn.player.toLowerCase()}-pawn`;
                     if (state.selectedId === pawn.id) pEl.classList.add('selected');
                     if (state.gamePhase === 'penalty' && pawn.player === state.currentTurn) pEl.classList.add('penalty-pawn');
                     dotEl.appendChild(pEl);
                 }
                 if (state.selectedId) {
-                    const possible = getAllLegalMoves(state.selectedId, state.pawns);
-                    if (possible.find(m => m.to === parseInt(id))) dotEl.classList.add('possible-move');
+                    const moves = getAllLegalMoves(state.selectedId, state.pawns);
+                    if (moves.find(m => m.to === parseInt(id))) dotEl.classList.add('possible-move');
                 }
                 boardContainer.appendChild(dotEl);
             }
@@ -329,10 +271,8 @@
         function onDotClick(id) {
             if (state.winner) return;
             if (state.gamePhase === 'penalty') {
-                const pawn = Object.values(state.pawns).find(p => p.pos === id);
-                if (pawn && pawn.player === state.currentTurn) {
-                    delete state.pawns[pawn.id]; state.gamePhase = 'playing'; renderBoard(); setTimeout(switchTurn, 600);
-                }
+                const p = Object.values(state.pawns).find(p => p.pos === id);
+                if (p && p.player === state.currentTurn) { delete state.pawns[p.id]; state.gamePhase = 'playing'; renderBoard(); setTimeout(switchTurn, 600); }
                 return;
             }
             if (state.mode === 'HvAI' && state.currentTurn === 'Blue') return;
@@ -341,41 +281,23 @@
                 const move = getAllLegalMoves(state.selectedId, state.pawns).find(m => m.to === id);
                 if (move) { executeMove(state.selectedId, id, move.isCapture, move.capturedPos); return; }
             }
-            if (pawn && pawn.player === state.currentTurn) {
-                if (state.mustCaptureId && state.mustCaptureId !== pawn.id) return;
-                state.selectedId = pawn.id; renderBoard();
-            }
+            if (pawn && pawn.player === state.currentTurn) { if (state.mustCaptureId && state.mustCaptureId !== pawn.id) return; state.selectedId = pawn.id; renderBoard(); }
         }
 
         function updateHUD() {
             const indicator = document.getElementById('turn-indicator');
             if (state.winner) { indicator.innerText = state.winner + " Wins!"; indicator.style.color = "white"; }
-            else { 
-                indicator.innerText = state.currentTurn + "'s Turn"; 
-                indicator.style.color = (state.currentTurn === 'Red') ? 'var(--red-color)' : 'var(--blue-color)';
-            }
+            else { indicator.innerText = state.currentTurn + "'s Turn"; indicator.style.color = (state.currentTurn === 'Red') ? 'var(--red-color)' : 'var(--blue-color)'; }
             document.getElementById('game-mode-indicator').innerText = (state.mode === 'HvAI' ? `vs ${state.aiSkill} AI` : "Local PvP") + ` | ${state.difficulty} Rules`;
         }
 
-        // --- BUTTONS ---
         document.getElementById('p-vs-p-btn').onclick = () => { state.mode = 'HvH'; mainMenu.classList.add('hidden'); gameWrapper.classList.remove('hidden'); initGame(); };
-        document.getElementById('p-vs-ai-btn').onclick = () => { state.mode = 'HvAI'; mainMenu.classList.add('hidden'); settingsScreen.classList.remove('hidden'); document.getElementById('ai-difficulty-group').classList.remove('hidden'); };
+        document.getElementById('p-vs-ai-btn').onclick = () => { state.mode = 'HvAI'; mainMenu.classList.add('hidden'); settingsScreen.classList.remove('hidden'); };
         document.getElementById('start-game-btn').onclick = () => { settingsScreen.classList.add('hidden'); gameWrapper.classList.remove('hidden'); initGame(); };
         document.getElementById('rotate-btn').onclick = () => boardContainer.classList.toggle('rotated');
         document.getElementById('back-to-menu-btn').onclick = () => { gameWrapper.classList.add('hidden'); mainMenu.classList.remove('hidden'); };
         document.getElementById('new-game-btn').onclick = initGame;
-        settingsScreen.onclick = e => {
-            if (e.target.dataset.aiSkill) {
-                state.aiSkill = e.target.dataset.aiSkill;
-                document.querySelectorAll('[data-ai-skill]').forEach(b => b.classList.remove('selected'));
-                e.target.classList.add('selected');
-            }
-            if (e.target.dataset.difficulty) {
-                state.difficulty = e.target.dataset.difficulty;
-                document.querySelectorAll('[data-difficulty]').forEach(b => b.classList.remove('selected'));
-                e.target.classList.add('selected');
-            }
-        };
+        settingsScreen.onclick = e => { if (e.target.dataset.aiSkill) { state.aiSkill = e.target.dataset.aiSkill; document.querySelectorAll('[data-ai-skill]').forEach(b => b.classList.remove('selected')); e.target.classList.add('selected'); } if (e.target.dataset.difficulty) { state.difficulty = e.target.dataset.difficulty; document.querySelectorAll('[data-difficulty]').forEach(b => b.classList.remove('selected')); e.target.classList.add('selected'); } };
     });
 </script>
 </body>

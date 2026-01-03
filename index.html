@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dot Fight - Version 13.0</title>
+    <title>Dot Fight - Version 14.0</title>
     <style>
         :root {
             --board-width: 300px; --board-height: 500px; --dot-size: 40px; --pawn-size: 32px;
@@ -26,8 +26,8 @@
         #board-container { position: relative; width: var(--board-width); height: var(--board-height); margin: 0 auto; transition: 0.5s; }
         #board-container.rotated { transform: rotate(90deg); }
         .line { position: absolute; background-color: var(--line-color); transform-origin: 0 0; height: 2px; pointer-events: none;}
-        .dot { position: absolute; width: var(--dot-size); height: var(--dot-size); background-color: var(--dot-color); border-radius: 50%; cursor: pointer; transform: translate(-50%, -50%); display: flex; justify-content: center; align-items: center; transition: 0.2s; }
-        .pawn { width: var(--pawn-size); height: var(--pawn-size); border-radius: 50%; pointer-events: none; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .dot { position: absolute; width: var(--dot-size); height: var(--dot-size); background-color: var(--dot-color); border-radius: 50%; cursor: pointer; transform: translate(-50%, -50%); display: flex; justify-content: center; align-items: center; }
+        .pawn { width: var(--pawn-size); height: var(--pawn-size); border-radius: 50%; pointer-events: none; transition: 0.3s; }
         .red-pawn { background-color: var(--red-color); }
         .blue-pawn { background-color: var(--blue-color); }
         .selected { box-shadow: 0 0 15px 5px var(--highlight-color); }
@@ -46,18 +46,17 @@
 </div>
 
 <div id="settings-screen" class="menu hidden">
-    <h1>AI Settings</h1>
+    <h1>AI Rules</h1>
     <div class="options-group">
         <h3>Intelligence</h3>
         <button class="option-button" data-ai-skill="Easy">Easy</button>
-        <button class="option-button" data-ai-skill="Medium">Medium</button>
         <button class="option-button selected" data-ai-skill="Hard">Expert</button>
     </div>
     <div class="options-group">
-        <h3>Penalties</h3>
-        <button class="option-button selected" data-difficulty="Beginner">None</button>
+        <h3>Penalty Mode</h3>
+        <button class="option-button selected" data-difficulty="Beginner">Skip Turn</button>
         <button class="option-button" data-difficulty="Intermediate">Remove Pawn</button>
-        <button class="option-button" data-difficulty="Expert">Insta-Loss</button>
+        <button class="option-button" data-difficulty="Expert">Instant Loss</button>
     </div>
     <button id="start-game-btn" class="menu-button">Start Battle</button>
 </div>
@@ -80,7 +79,8 @@
         const boardData = {
             dots: { 1:{x:50,y:50}, 2:{x:150,y:50}, 3:{x:250,y:50}, 4:{x:150,y:150}, 5:{x:250,y:150}, 6:{x:150,y:250}, 7:{x:150,y:350}, 8:{x:50,y:350}, 9:{x:150,y:450}, 10:{x:50,y:450}, 11:{x:250,y:450} },
             adjacencies: { 1:[2], 2:[1,3,4], 3:[2], 4:[2,5,6], 5:[4], 6:[4,7], 7:[6,8,9], 8:[7], 9:[7,10,11], 10:[9], 11:[9] },
-            captureLines: [ [1,2,3], [10,9,11], [2,4,6,7,9] ]
+            captureLines: [ [1,2,3], [10,9,11], [2,4,6,7,9] ],
+            blueBasal: [1, 2, 3], redBasal: [9, 10, 11]
         };
         
         let state = { pawns: {}, currentTurn: 'Red', mode: 'HvAI', aiSkill: 'Hard', difficulty: 'Beginner', selectedId: null, mustCaptureId: null, winner: null, history: [], gamePhase: 'playing' };
@@ -115,22 +115,17 @@
                     return;
                 }
             }
-            // Repetition Check
             const currentHash = getBoardHash(state.pawns);
             state.history.push(currentHash);
-            const reps = state.history.filter(h => h === currentHash).length;
-            if (reps >= 3) { renderBoard(); applyPenalty("Repetition"); return; }
-            
+            if (state.history.filter(h => h === currentHash).length >= 3) { applyPenalty("Repetition"); return; }
             renderBoard(); if (!checkWin()) switchTurn();
         }
 
-        function getBoardHash(pawns) {
-            return Object.values(pawns).map(p => `${p.id}${p.pos}`).sort().join('|');
-        }
+        function getBoardHash(pawns) { return Object.values(pawns).map(p => `${p.id}${p.pos}`).sort().join('|'); }
 
         function applyPenalty(reason) {
-            state.gamePhase = 'penalty_wait'; // Lock standard movement
-            const indicator = document.getElementById('turn-indicator'); indicator.innerText = `${reason}!`;
+            state.gamePhase = 'penalty_wait';
+            const indicator = document.getElementById('turn-indicator'); indicator.innerText = reason;
             setTimeout(() => {
                 if (state.difficulty === 'Beginner') { state.gamePhase = 'playing'; switchTurn(); }
                 else if (state.difficulty === 'Intermediate') { state.gamePhase = 'penalty'; renderBoard(); }
@@ -138,41 +133,29 @@
             }, 1000);
         }
 
-        // --- MASTER AI ENGINE ---
         function runAILogic() {
             if (state.winner || state.currentTurn !== 'Blue' || state.gamePhase !== 'playing') return;
             const moves = getAvailableMoves('Blue', state.pawns);
             if (moves.length === 0) return;
-
-            let choice;
-            if (state.aiSkill === 'Easy') {
-                choice = moves[Math.floor(Math.random() * moves.length)];
-            } else if (state.aiSkill === 'Medium') {
-                choice = minimax(state.pawns, 2, true).move;
-            } else {
-                choice = minimax(state.pawns, 4, true).move; // Expert depth
-            }
+            let choice = (state.aiSkill === 'Easy') ? moves[Math.floor(Math.random() * moves.length)] : minimax(state.pawns, 4, true).move;
             executeMove(choice.pawnId, choice.to, choice.isCapture, choice.capturedPos);
         }
 
         function minimax(pawns, depth, isAI) {
             const availMoves = getAvailableMoves(isAI ? 'Blue' : 'Red', pawns);
             if (depth === 0 || availMoves.length === 0) return { score: evaluateBoard(pawns) };
-
             let bestMove = availMoves[0];
             if (isAI) {
                 let bestScore = -Infinity;
                 for (let m of availMoves) {
-                    const nextBoard = simulateMove(pawns, m);
-                    const res = minimax(nextBoard, depth - 1, false);
+                    const res = minimax(simulateMove(pawns, m), depth - 1, false);
                     if (res.score > bestScore) { bestScore = res.score; bestMove = m; }
                 }
                 return { score: bestScore, move: bestMove };
             } else {
                 let bestScore = Infinity;
                 for (let m of availMoves) {
-                    const nextBoard = simulateMove(pawns, m);
-                    const res = minimax(nextBoard, depth - 1, true);
+                    const res = minimax(simulateMove(pawns, m), depth - 1, true);
                     if (res.score < bestScore) { bestScore = res.score; bestMove = m; }
                 }
                 return { score: bestScore, move: bestMove };
@@ -182,16 +165,12 @@
         function evaluateBoard(pawns) {
             const pList = Object.values(pawns);
             const hash = getBoardHash(pawns);
-            
-            // Material is king
-            let score = (pList.filter(p => p.player === 'Blue').length - pList.filter(p => p.player === 'Red').length) * 500;
-            
-            // Penalty for repeating states to break "Dull Loops"
-            if (state.history.includes(hash)) score -= 150;
-
+            let score = (pList.filter(p => p.player === 'Blue').length - pList.filter(p => p.player === 'Red').length) * 1000;
+            if (state.history.includes(hash)) score -= 200; // Repetition penalty in "mind"
             pList.forEach(p => {
-                const centerVal = (p.pos === 2 || p.pos === 9) ? 25 : 0;
-                score += (p.player === 'Blue' ? centerVal : -centerVal);
+                const centerBonus = (p.pos === 2 || p.pos === 9) ? 50 : 0;
+                const progressBonus = (p.player === 'Blue') ? (p.pos > 3 ? 20 : 0) : (p.pos < 9 ? 20 : 0);
+                score += (p.player === 'Blue' ? (centerBonus + progressBonus) : -(centerBonus + progressBonus));
             });
             return score;
         }
@@ -237,9 +216,24 @@
         }
 
         function getSimples(pawnId, pawnSet) {
-            const p = pawnSet[pawnId]; const results = [];
+            const p = pawnSet[pawnId]; if (!p) return [];
+            const results = [];
+            const myBasal = (p.player === 'Blue') ? boardData.blueBasal : boardData.redBasal;
+            const myCenter = (p.player === 'Blue') ? 2 : 9;
+            const oppBasal = (p.player === 'Blue') ? boardData.redBasal : boardData.blueBasal;
+            const oppCenter = (p.player === 'Blue') ? 9 : 2;
+
             (boardData.adjacencies[p.pos] || []).forEach(target => {
-                if (!Object.values(pawnSet).find(pawn => pawn.pos === target)) results.push({to: target, isCapture: false});
+                const isOccupied = Object.values(pawnSet).find(pawn => pawn.pos === target);
+                if (!isOccupied) {
+                    let allowed = true;
+                    // Leaving Basal Row rule
+                    if (myBasal.includes(p.pos) && !myBasal.includes(target) && p.pos !== myCenter) allowed = false;
+                    // Entering Opponent Basal Row rule
+                    if (!oppBasal.includes(p.pos) && oppBasal.includes(target) && target !== oppCenter) allowed = false;
+
+                    if (allowed) results.push({to: target, isCapture: false});
+                }
             });
             return results;
         }
@@ -290,11 +284,11 @@
                 return;
             }
             if (state.mode === 'HvAI' && state.currentTurn === 'Blue') return;
-            const pawn = Object.values(state.pawns).find(p => p.pos === id);
             if (state.selectedId) {
                 const move = getAllLegalMoves(state.selectedId, state.pawns).find(m => m.to === id);
                 if (move) { executeMove(state.selectedId, id, move.isCapture, move.capturedPos); return; }
             }
+            const pawn = Object.values(state.pawns).find(p => p.pos === id);
             if (pawn && pawn.player === state.currentTurn) { if (state.mustCaptureId && state.mustCaptureId !== pawn.id) return; state.selectedId = pawn.id; renderBoard(); }
         }
 

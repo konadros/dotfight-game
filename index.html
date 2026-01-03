@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dot Fight - Version 12.0</title>
+    <title>Dot Fight - Version 13.0</title>
     <style>
         :root {
             --board-width: 300px; --board-height: 500px; --dot-size: 40px; --pawn-size: 32px;
@@ -11,7 +11,7 @@
             --bg-color: #2c3e50; --text-color: #ecf0f1; --dot-color: #7f8c8d; --line-color: #95a5a6;
             --container-bg: #34495e; --danger-color: #e74c3c;
         }
-        body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: var(--bg-color); color: var(--text-color); }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: var(--bg-color); color: var(--text-color); overflow: hidden; }
         .hidden { display: none !important; }
         .menu { text-align: center; }
         .menu h1 { font-size: 3.5em; margin-bottom: 30px; color: var(--highlight-color); }
@@ -26,13 +26,13 @@
         #board-container { position: relative; width: var(--board-width); height: var(--board-height); margin: 0 auto; transition: 0.5s; }
         #board-container.rotated { transform: rotate(90deg); }
         .line { position: absolute; background-color: var(--line-color); transform-origin: 0 0; height: 2px; pointer-events: none;}
-        .dot { position: absolute; width: var(--dot-size); height: var(--dot-size); background-color: var(--dot-color); border-radius: 50%; cursor: pointer; transform: translate(-50%, -50%); display: flex; justify-content: center; align-items: center; }
-        .pawn { width: var(--pawn-size); height: var(--pawn-size); border-radius: 50%; pointer-events: none; transition: 0.2s; }
+        .dot { position: absolute; width: var(--dot-size); height: var(--dot-size); background-color: var(--dot-color); border-radius: 50%; cursor: pointer; transform: translate(-50%, -50%); display: flex; justify-content: center; align-items: center; transition: 0.2s; }
+        .pawn { width: var(--pawn-size); height: var(--pawn-size); border-radius: 50%; pointer-events: none; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .red-pawn { background-color: var(--red-color); }
         .blue-pawn { background-color: var(--blue-color); }
         .selected { box-shadow: 0 0 15px 5px var(--highlight-color); }
         .possible-move { background-color: var(--move-color); }
-        .penalty-pawn { box-shadow: 0 0 15px 5px var(--danger-color); cursor: pointer !important; }
+        .penalty-pawn { box-shadow: 0 0 20px 8px var(--danger-color); cursor: pointer !important; }
         .controls { margin-top: 20px; text-align: center; }
         .game-button { padding: 8px 15px; font-size: 0.9em; cursor: pointer; border: none; border-radius: 5px; background-color: #555; color: var(--text-color); margin: 0 5px; }
     </style>
@@ -46,20 +46,20 @@
 </div>
 
 <div id="settings-screen" class="menu hidden">
-    <h1>AI Battle</h1>
+    <h1>AI Settings</h1>
     <div class="options-group">
-        <h3>Difficulty</h3>
-        <button class="option-button selected" data-ai-skill="Easy">Easy</button>
+        <h3>Intelligence</h3>
+        <button class="option-button" data-ai-skill="Easy">Easy</button>
         <button class="option-button" data-ai-skill="Medium">Medium</button>
-        <button class="option-button" data-ai-skill="Hard">Hard</button>
+        <button class="option-button selected" data-ai-skill="Hard">Expert</button>
     </div>
     <div class="options-group">
-        <h3>Rule Set</h3>
-        <button class="option-button selected" data-difficulty="Beginner">Beginner</button>
-        <button class="option-button" data-difficulty="Intermediate">Intermediate</button>
-        <button class="option-button" data-difficulty="Expert">Expert</button>
+        <h3>Penalties</h3>
+        <button class="option-button selected" data-difficulty="Beginner">None</button>
+        <button class="option-button" data-difficulty="Intermediate">Remove Pawn</button>
+        <button class="option-button" data-difficulty="Expert">Insta-Loss</button>
     </div>
-    <button id="start-game-btn" class="menu-button">Start Match</button>
+    <button id="start-game-btn" class="menu-button">Start Battle</button>
 </div>
 
 <div class="game-wrapper hidden">
@@ -83,7 +83,7 @@
             captureLines: [ [1,2,3], [10,9,11], [2,4,6,7,9] ]
         };
         
-        let state = { pawns: {}, currentTurn: 'Red', mode: 'HvAI', aiSkill: 'Easy', difficulty: 'Beginner', selectedId: null, mustCaptureId: null, winner: null, history: [], gamePhase: 'playing' };
+        let state = { pawns: {}, currentTurn: 'Red', mode: 'HvAI', aiSkill: 'Hard', difficulty: 'Beginner', selectedId: null, mustCaptureId: null, winner: null, history: [], gamePhase: 'playing' };
 
         const mainMenu = document.getElementById('main-menu'), settingsScreen = document.getElementById('settings-screen'), gameWrapper = document.querySelector('.game-wrapper'), boardContainer = document.getElementById('board-container');
 
@@ -99,7 +99,7 @@
             state.selectedId = null; state.mustCaptureId = null;
             updateHUD();
             if (!playerHasMoves(state.currentTurn)) { applyPenalty("Stalemate"); return; }
-            if (state.mode === 'HvAI' && state.currentTurn === 'Blue') setTimeout(runAILogic, 800);
+            if (state.mode === 'HvAI' && state.currentTurn === 'Blue') setTimeout(runAILogic, 600);
         }
 
         function playerHasMoves(player) { return Object.values(state.pawns).filter(p => p.player === player).some(p => getAllLegalMoves(p.id, state.pawns).length > 0); }
@@ -109,23 +109,36 @@
             if (isCapture) {
                 const victim = Object.values(state.pawns).find(p => p.pos === capturedPos);
                 if (victim) delete state.pawns[victim.id];
-                if (getCaptures(pawnId, state.pawns).length > 0) { state.mustCaptureId = pawnId; renderBoard(); if (state.mode === 'HvAI' && state.currentTurn === 'Blue') setTimeout(runAILogic, 600); return; }
+                if (getCaptures(pawnId, state.pawns).length > 0) {
+                    state.mustCaptureId = pawnId; renderBoard();
+                    if (state.mode === 'HvAI' && state.currentTurn === 'Blue') setTimeout(runAILogic, 600);
+                    return;
+                }
             }
-            const hash = JSON.stringify(state.pawns); state.history.push(hash);
-            if (state.history.filter(h => h === hash).length >= 3) { applyPenalty("Repetition"); return; }
+            // Repetition Check
+            const currentHash = getBoardHash(state.pawns);
+            state.history.push(currentHash);
+            const reps = state.history.filter(h => h === currentHash).length;
+            if (reps >= 3) { renderBoard(); applyPenalty("Repetition"); return; }
+            
             renderBoard(); if (!checkWin()) switchTurn();
         }
 
+        function getBoardHash(pawns) {
+            return Object.values(pawns).map(p => `${p.id}${p.pos}`).sort().join('|');
+        }
+
         function applyPenalty(reason) {
-            const player = state.currentTurn; const indicator = document.getElementById('turn-indicator'); indicator.innerText = `${reason}!`;
+            state.gamePhase = 'penalty_wait'; // Lock standard movement
+            const indicator = document.getElementById('turn-indicator'); indicator.innerText = `${reason}!`;
             setTimeout(() => {
-                if (state.difficulty === 'Beginner') { switchTurn(); }
+                if (state.difficulty === 'Beginner') { state.gamePhase = 'playing'; switchTurn(); }
                 else if (state.difficulty === 'Intermediate') { state.gamePhase = 'penalty'; renderBoard(); }
-                else { state.winner = (player === 'Red') ? 'Blue' : 'Red'; updateHUD(); }
+                else { state.winner = (state.currentTurn === 'Red') ? 'Blue' : 'Red'; updateHUD(); }
             }, 1000);
         }
 
-        // --- ENHANCED AI ENGINE ---
+        // --- MASTER AI ENGINE ---
         function runAILogic() {
             if (state.winner || state.currentTurn !== 'Blue' || state.gamePhase !== 'playing') return;
             const moves = getAvailableMoves('Blue', state.pawns);
@@ -133,12 +146,11 @@
 
             let choice;
             if (state.aiSkill === 'Easy') {
-                const safe = moves.filter(m => isMoveSafe(m.pawnId, m.to, state.pawns));
-                choice = safe.length > 0 ? safe[Math.floor(Math.random() * safe.length)] : moves[0];
+                choice = moves[Math.floor(Math.random() * moves.length)];
             } else if (state.aiSkill === 'Medium') {
                 choice = minimax(state.pawns, 2, true).move;
             } else {
-                choice = minimax(state.pawns, 4, true).move; // Hard depth
+                choice = minimax(state.pawns, 4, true).move; // Expert depth
             }
             executeMove(choice.pawnId, choice.to, choice.isCapture, choice.capturedPos);
         }
@@ -169,10 +181,17 @@
 
         function evaluateBoard(pawns) {
             const pList = Object.values(pawns);
-            let score = (pList.filter(p => p.player === 'Blue').length - pList.filter(p => p.player === 'Red').length) * 100;
+            const hash = getBoardHash(pawns);
+            
+            // Material is king
+            let score = (pList.filter(p => p.player === 'Blue').length - pList.filter(p => p.player === 'Red').length) * 500;
+            
+            // Penalty for repeating states to break "Dull Loops"
+            if (state.history.includes(hash)) score -= 150;
+
             pList.forEach(p => {
-                const val = (p.pos === 2 || p.pos === 9) ? 15 : 0;
-                score += (p.player === 'Blue' ? val : -val);
+                const centerVal = (p.pos === 2 || p.pos === 9) ? 25 : 0;
+                score += (p.player === 'Blue' ? centerVal : -centerVal);
             });
             return score;
         }
@@ -191,11 +210,6 @@
             });
             const caps = res.filter(m => m.isCapture);
             return caps.length > 0 ? caps : res;
-        }
-
-        function isMoveSafe(pawnId, toPos, pawnSet) {
-            const mock = JSON.parse(JSON.stringify(pawnSet)); mock[pawnId].pos = toPos;
-            return !Object.values(mock).filter(p => p.player === 'Red').some(r => getCaptures(r.id, mock).length > 0);
         }
 
         function getAllLegalMoves(pawnId, pawnSet) {
@@ -269,7 +283,7 @@
         }
 
         function onDotClick(id) {
-            if (state.winner) return;
+            if (state.winner || state.gamePhase === 'penalty_wait') return;
             if (state.gamePhase === 'penalty') {
                 const p = Object.values(state.pawns).find(p => p.pos === id);
                 if (p && p.player === state.currentTurn) { delete state.pawns[p.id]; state.gamePhase = 'playing'; renderBoard(); setTimeout(switchTurn, 600); }
@@ -288,7 +302,7 @@
             const indicator = document.getElementById('turn-indicator');
             if (state.winner) { indicator.innerText = state.winner + " Wins!"; indicator.style.color = "white"; }
             else { indicator.innerText = state.currentTurn + "'s Turn"; indicator.style.color = (state.currentTurn === 'Red') ? 'var(--red-color)' : 'var(--blue-color)'; }
-            document.getElementById('game-mode-indicator').innerText = (state.mode === 'HvAI' ? `vs ${state.aiSkill} AI` : "Local PvP") + ` | ${state.difficulty} Rules`;
+            document.getElementById('game-mode-indicator').innerText = (state.mode === 'HvAI' ? `Skill: ${state.aiSkill}` : "Local PvP") + ` | Rule: ${state.difficulty}`;
         }
 
         document.getElementById('p-vs-p-btn').onclick = () => { state.mode = 'HvH'; mainMenu.classList.add('hidden'); gameWrapper.classList.remove('hidden'); initGame(); };

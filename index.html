@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dot Fight - Version 15.0</title>
+    <title>Dot Fight - Version 16.0</title>
     <style>
         :root {
             --board-width: 300px; --board-height: 500px; --dot-size: 40px; --pawn-size: 32px;
@@ -46,18 +46,18 @@
 </div>
 
 <div id="settings-screen" class="menu hidden">
-    <h1>Match Setup</h1>
+    <h1>Tactics</h1>
     <div class="options-group">
-        <h3>Difficulty</h3>
-        <button class="option-button selected" data-ai-skill="Hard">Expert</button>
-        <button class="option-button" data-ai-skill="Medium">Normal</button>
+        <h3>Intelligence</h3>
+        <button class="option-button" data-ai-skill="Medium">Balanced</button>
+        <button class="option-button selected" data-ai-skill="Hard">Expert (Gambit)</button>
     </div>
     <div class="options-group">
-        <h3>Stalemate Rule</h3>
-        <button class="option-button selected" data-difficulty="Expert">Insta-Loss</button>
+        <h3>Blocking Rule</h3>
+        <button class="option-button selected" data-difficulty="Expert">Instant Loss</button>
         <button class="option-button" data-difficulty="Intermediate">Remove Pawn</button>
     </div>
-    <button id="start-game-btn" class="menu-button">Battle!</button>
+    <button id="start-game-btn" class="menu-button">FIGHT</button>
 </div>
 
 <div class="game-wrapper hidden">
@@ -135,7 +135,8 @@
             if (state.winner || state.currentTurn !== 'Blue' || state.gamePhase !== 'playing') return;
             const moves = getAvailableMoves('Blue', state.pawns);
             if (moves.length === 0) return;
-            let choice = (state.aiSkill === 'Medium') ? minimax(state.pawns, 2, true).move : minimax(state.pawns, 4, true).move;
+            // Depth increased to 5 for Gambit detection
+            let choice = (state.aiSkill === 'Medium') ? minimax(state.pawns, 2, true).move : minimax(state.pawns, 5, true).move;
             executeMove(choice.pawnId, choice.to, choice.isCapture, choice.capturedPos);
         }
 
@@ -160,25 +161,32 @@
             }
         }
 
-        // --- ENHANCED EVALUATION ---
+        // --- THE "STRATEGIST" EVALUATION ---
         function evaluateBoard(pawns) {
             const pList = Object.values(pawns);
-            const hash = getBoardHash(pawns);
-            let score = (pList.filter(p => p.player === 'Blue').length - pList.filter(p => p.player === 'Red').length) * 1000;
+            const blueCount = pList.filter(p => p.player === 'Blue').length;
+            const redCount = pList.filter(p => p.player === 'Red').length;
             
-            // Mobility is critical to avoid blockades
             const blueMoves = getAvailableMoves('Blue', pawns).length;
             const redMoves = getAvailableMoves('Red', pawns).length;
-            score += (blueMoves * 20);
-            score -= (redMoves * 20);
 
-            if (state.history.includes(hash)) score -= 300; 
+            // MATERIAL: Now dynamic. If mobility is low, material value drops.
+            const materialWeight = blueMoves < 2 ? 200 : 800;
+            let score = (blueCount - redCount) * materialWeight;
+            
+            // MOBILITY: Aggressively weighted to avoid blockades
+            score += (blueMoves * 150);
+            score -= (redMoves * 150);
+
+            // BOTTLE-NECK AWARENESS: Penalize if opponent is blocking exit (Dot 2)
+            const redOnBlockade = pList.some(p => p.player === 'Red' && (p.pos === 4 || p.pos === 6 || p.pos === 7));
+            if (redOnBlockade) score -= 500;
 
             pList.forEach(p => {
-                const centerBonus = (p.pos === 2 || p.pos === 9) ? 80 : 0;
-                const progress = (p.player === 'Blue') ? (p.pos > 3 ? 40 : 0) : (p.pos < 9 ? 40 : 0);
-                score += (p.player === 'Blue' ? (centerBonus + progress) : -(centerBonus + progress));
+                const hubBonus = (p.pos === 2 || p.pos === 9) ? 120 : 0;
+                score += (p.player === 'Blue' ? hubBonus : -hubBonus);
             });
+
             return score;
         }
 
@@ -299,7 +307,7 @@
             const indicator = document.getElementById('turn-indicator');
             if (state.winner) { indicator.innerText = state.winner + " Wins!"; indicator.style.color = "white"; }
             else { indicator.innerText = state.currentTurn + "'s Turn"; indicator.style.color = (state.currentTurn === 'Red') ? 'var(--red-color)' : 'var(--blue-color)'; }
-            document.getElementById('game-mode-indicator').innerText = (state.mode === 'HvAI' ? `Skill: ${state.aiSkill}` : "Local PvP") + ` | Rule: ${state.difficulty}`;
+            document.getElementById('game-mode-indicator').innerText = (state.mode === 'HvAI' ? `Expert AI` : "Local PvP") + ` | ${state.difficulty} Rules`;
         }
 
         document.getElementById('p-vs-p-btn').onclick = () => { state.mode = 'HvH'; mainMenu.classList.add('hidden'); gameWrapper.classList.remove('hidden'); initGame(); };

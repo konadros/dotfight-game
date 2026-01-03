@@ -3,114 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dot Fight - Version 17.0</title>
+    <title>Dot Fight - Version 18.0</title>
     <style>
         :root {
-            --board-width: 320px; --board-height: 520px; --dot-size: 42px; --pawn-size: 34px;
-            --red-color: #e74c3c; --red-dark: #c0392b;
-            --blue-color: #3498db; --blue-dark: #2980b9;
-            --highlight-color: #f1c40f; --move-color: #2ecc71;
-            --bg-color: #1a252f; --text-color: #ecf0f1; --dot-color: #455a64; --line-color: #546e7a;
-            --container-bg: #2c3e50; --danger-color: #e74c3c;
+            --board-width: 320px; --board-height: 520px; --dot-size: 38px; --pawn-size: 32px;
+            --red-color: #c0392b; --blue-color: #2980b9; --highlight-color: #f1c40f; --move-color: #27ae60;
+            --bg-color: #2c3e50; --text-color: #ecf0f1; --dot-color: #7f8c8d; --line-color: #95a5a6;
+            --container-bg: #34495e; --danger-color: #e74c3c;
         }
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: var(--bg-color); color: var(--text-color); overflow: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: var(--bg-color); color: var(--text-color); overflow: hidden; }
         .hidden { display: none !important; }
         
-        /* Menu Styling */
-        .menu { text-align: center; animation: fadeIn 0.5s ease-out; }
-        .menu h1 { font-size: 4em; margin-bottom: 20px; color: var(--highlight-color); text-shadow: 0 4px 10px rgba(0,0,0,0.5); letter-spacing: 2px; }
-        .menu h3 { margin-top: 25px; color: #bdc3c7; text-transform: uppercase; font-size: 0.9em; letter-spacing: 1px; }
-        
+        /* Menu & Flat Buttons */
+        .menu { text-align: center; max-width: 300px; }
+        .menu h1 { font-size: 3.5em; margin-bottom: 30px; color: var(--highlight-color); }
         .menu-button { 
-            display: block; width: 280px; padding: 16px; font-size: 1.2em; font-weight: bold;
-            margin: 15px auto; cursor: pointer; border: none; border-radius: 50px; 
-            background: linear-gradient(to bottom, #34495e, #2c3e50); color: var(--text-color); 
-            box-shadow: 0 4px 0 #1a252f; transition: all 0.1s; 
+            display: block; width: 250px; padding: 15px; font-size: 1.1em; font-weight: bold;
+            margin: 12px auto; cursor: pointer; border: 2px solid var(--line-color); 
+            border-radius: 4px; background: transparent; color: var(--text-color); 
+            transition: 0.2s;
         }
-        .menu-button:hover { background: var(--highlight-color); color: #2c3e50; transform: translateY(-2px); box-shadow: 0 6px 0 #d4ac0d; }
-        .menu-button:active { transform: translateY(2px); box-shadow: 0 1px 0 #d4ac0d; }
+        .menu-button:hover { background-color: var(--highlight-color); border-color: var(--highlight-color); color: var(--bg-color); }
         
+        /* Rules Screen Styling */
+        #rules-screen { text-align: left; padding: 20px; overflow-y: auto; max-height: 80vh; background: var(--container-bg); border-radius: 10px; }
+        #rules-screen h2 { color: var(--highlight-color); border-bottom: 1px solid var(--line-color); padding-bottom: 10px; }
+        #rules-screen ul { padding-left: 20px; }
+        #rules-screen li { margin-bottom: 10px; line-height: 1.4; }
+
+        .options-group { margin: 15px 0; text-align: center; }
         .option-button { 
-            display: inline-block; padding: 10px 18px; font-size: 0.9em; font-weight: bold; margin: 5px; 
-            cursor: pointer; border: 2px solid var(--line-color); border-radius: 8px; 
-            background-color: transparent; color: var(--text-color); transition: 0.2s; 
+            display: inline-block; padding: 8px 14px; font-size: 0.9em; margin: 4px; 
+            cursor: pointer; border: 1px solid var(--line-color); border-radius: 4px; 
+            background: transparent; color: var(--text-color); 
         }
-        .option-button.selected { background-color: var(--blue-color); border-color: var(--blue-color); box-shadow: 0 0 10px rgba(52, 152, 219, 0.5); }
+        .option-button.selected { background-color: var(--blue-color); border-color: var(--blue-color); }
         
-        /* Game Layout */
-        .game-wrapper { background-color: var(--container-bg); padding: 25px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); width: var(--board-width); border: 1px solid rgba(255,255,255,0.1); }
+        /* Game Board Visuals (Flat) */
+        .game-wrapper { background-color: var(--container-bg); padding: 20px; border-radius: 10px; width: var(--board-width); }
+        .hud { margin-bottom: 20px; text-align: center; }
+        #turn-indicator { font-size: 1.8em; font-weight: bold; height: 40px; }
         
-        .hud { margin-bottom: 25px; }
-        #turn-indicator { 
-            font-size: 1.6em; font-weight: 900; padding: 10px; border-radius: 12px; 
-            background: rgba(0,0,0,0.2); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-            text-transform: uppercase; letter-spacing: 1px;
-        }
-        #game-mode-indicator { font-size: 0.8em; color: #95a5a6; margin-top: 8px; font-weight: bold; }
-        
-        /* Board Visuals */
-        #board-container { position: relative; width: var(--board-width); height: var(--board-height); margin: 0 auto; transition: 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55); background: rgba(0,0,0,0.1); border-radius: 15px; }
+        #board-container { position: relative; width: var(--board-width); height: var(--board-height); margin: 0 auto; transition: 0.5s; }
         #board-container.rotated { transform: rotate(90deg); }
-        
-        .line { position: absolute; background-color: var(--line-color); transform-origin: 0 0; height: 3px; border-radius: 2px; opacity: 0.6; }
+        .line { position: absolute; background-color: var(--line-color); transform-origin: 0 0; height: 2px; pointer-events: none;}
         
         .dot { 
             position: absolute; width: var(--dot-size); height: var(--dot-size); 
-            background: radial-gradient(circle at center, #3d566e, #2c3e50);
-            border-radius: 50%; cursor: pointer; transform: translate(-50%, -50%); 
-            display: flex; justify-content: center; align-items: center; 
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 1px 1px rgba(255,255,255,0.1);
-            transition: 0.2s;
+            background-color: var(--dot-color); border-radius: 50%; cursor: pointer; 
+            transform: translate(-50%, -50%); display: flex; justify-content: center; align-items: center; 
         }
-        .dot:hover { background: #455a64; }
+        .pawn { width: var(--pawn-size); height: var(--pawn-size); border-radius: 50%; pointer-events: none; }
+        .red-pawn { background-color: var(--red-color); border: 2px solid #922b21; }
+        .blue-pawn { background-color: var(--blue-color); border: 2px solid #1f618d; }
         
-        /* 3D Pawn Styling */
-        .pawn { 
-            width: var(--pawn-size); height: var(--pawn-size); border-radius: 50%; 
-            pointer-events: none; position: relative;
-            box-shadow: 0 5px 10px rgba(0,0,0,0.4);
-        }
-        .red-pawn { background: radial-gradient(circle at 30% 30%, var(--red-color), var(--red-dark)); border: 1px solid #922b21; }
-        .blue-pawn { background: radial-gradient(circle at 30% 30%, var(--blue-color), var(--blue-dark)); border: 1px solid #1f618d; }
-        
-        /* Highlights */
-        .selected { box-shadow: 0 0 0 4px var(--highlight-color), 0 0 20px var(--highlight-color); transform: translate(-50%, -50%) scale(1.1); z-index: 10; }
-        .possible-move { background: rgba(46, 204, 113, 0.3) !important; border: 2px solid var(--move-color); }
-        .penalty-pawn { animation: pulseDanger 1s infinite; }
+        .selected { box-shadow: 0 0 0 4px var(--highlight-color); }
+        .possible-move { background-color: var(--move-color) !important; opacity: 0.8; }
+        .penalty-pawn { box-shadow: 0 0 15px 5px var(--danger-color); }
 
-        @keyframes pulseDanger {
-            0% { box-shadow: 0 0 0 0px var(--danger-color); }
-            70% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
-            100% { box-shadow: 0 0 0 0px rgba(231, 76, 60, 0); }
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .controls { margin-top: 25px; display: flex; justify-content: center; gap: 10px; }
-        .game-button { 
-            padding: 10px 15px; font-size: 0.8em; font-weight: bold; cursor: pointer; border: none; 
-            border-radius: 8px; background-color: #3d566e; color: var(--text-color); 
-            transition: 0.2s; flex: 1;
-        }
-        .game-button:hover { background-color: #546e7a; }
+        .controls { margin-top: 20px; display: flex; gap: 5px; }
+        .game-button { padding: 8px; font-size: 0.8em; cursor: pointer; border: 1px solid var(--line-color); background: transparent; color: var(--text-color); flex: 1; }
     </style>
 </head>
 <body>
 
 <div id="main-menu" class="menu">
-    <h1>DOT FIGHT</h1>
-    <button id="p-vs-p-btn" class="menu-button">LOCAL PVP</button>
-    <button id="p-vs-ai-btn" class="menu-button">SINGLE PLAYER</button>
+    <h1>Dot Fight</h1>
+    <button id="p-vs-p-btn" class="menu-button">Local PvP</button>
+    <button id="p-vs-ai-btn" class="menu-button">Play AI</button>
+    <button id="rules-btn" class="menu-button">RULES</button>
+</div>
+
+<div id="rules-screen" class="menu hidden">
+    <h2>Game Rules</h2>
+    <ul>
+        <li><strong>Movement:</strong> Move pawns along the grey lines to adjacent empty dots.</li>
+        <li><strong>The Basal Row:</strong> Your starting row (top for Blue, bottom for Red). You can only leave or enter your row through the <strong>center dot</strong>.</li>
+        <li><strong>Capturing:</strong> Jump over an opponent's pawn into an empty space to remove it. Multiple captures are mandatory if available.</li>
+        <li><strong>Stalemate:</strong> If you have no legal moves, a penalty is applied based on the chosen rule set (Skip turn, remove pawn, or lose match).</li>
+        <li><strong>Repetition:</strong> Moving between the same dots 3 times triggers a penalty.</li>
+    </ul>
+    <button id="rules-back-btn" class="menu-button">BACK</button>
 </div>
 
 <div id="settings-screen" class="menu hidden">
-    <h1>BATTLE SETUP</h1>
+    <h1>Match Setup</h1>
     <div class="options-group">
-        <h3>AI Intelligence</h3>
+        <h3>AI Difficulty</h3>
         <button class="option-button" data-ai-skill="Medium">Balanced</button>
-        <button class="option-button selected" data-ai-skill="Hard">Expert (Gambit)</button>
+        <button class="option-button selected" data-ai-skill="Hard">Expert</button>
     </div>
     <div class="options-group">
-        <h3>Stalemate Rule</h3>
+        <h3>Blocking Penalty</h3>
         <button class="option-button selected" data-difficulty="Expert">Instant Loss</button>
         <button class="option-button" data-difficulty="Intermediate">Remove Pawn</button>
     </div>
@@ -119,7 +103,7 @@
 
 <div class="game-wrapper hidden">
     <div class="hud">
-        <div id="turn-indicator">RED'S TURN</div>
+        <div id="turn-indicator">Red's Turn</div>
         <div id="game-mode-indicator"></div>
     </div>
     <div id="board-container"></div>
@@ -141,7 +125,11 @@
         
         let state = { pawns: {}, currentTurn: 'Red', mode: 'HvAI', aiSkill: 'Hard', difficulty: 'Expert', selectedId: null, mustCaptureId: null, winner: null, history: [], gamePhase: 'playing' };
 
-        const mainMenu = document.getElementById('main-menu'), settingsScreen = document.getElementById('settings-screen'), gameWrapper = document.querySelector('.game-wrapper'), boardContainer = document.getElementById('board-container');
+        const mainMenu = document.getElementById('main-menu'), 
+              settingsScreen = document.getElementById('settings-screen'), 
+              rulesScreen = document.getElementById('rules-screen'),
+              gameWrapper = document.querySelector('.game-wrapper'), 
+              boardContainer = document.getElementById('board-container');
 
         function initGame() {
             state.pawns = { 'r1':{id:'r1',player:'Red',pos:10}, 'r2':{id:'r2',player:'Red',pos:9}, 'r3':{id:'r3',player:'Red',pos:11}, 'b1':{id:'b1',player:'Blue',pos:1}, 'b2':{id:'b2',player:'Blue',pos:2}, 'b3':{id:'b3',player:'Blue',pos:3} };
@@ -219,15 +207,13 @@
 
         function evaluateBoard(pawns) {
             const pList = Object.values(pawns);
-            const blueCount = pList.filter(p => p.player === 'Blue').length;
-            const redCount = pList.filter(p => p.player === 'Red').length;
+            const hash = getBoardHash(pawns);
             const blueMoves = getAvailableMoves('Blue', pawns).length;
             const redMoves = getAvailableMoves('Red', pawns).length;
             const materialWeight = blueMoves < 2 ? 300 : 1000;
-            let score = (blueCount - redCount) * materialWeight;
+            let score = (pList.filter(p => p.player === 'Blue').length - pList.filter(p => p.player === 'Red').length) * materialWeight;
             score += (blueMoves * 120); score -= (redMoves * 120);
-            const redOnBlockade = pList.some(p => p.player === 'Red' && (p.pos === 4 || p.pos === 6 || p.pos === 7));
-            if (redOnBlockade) score -= 600;
+            if (pList.some(p => p.player === 'Red' && (p.pos === 4 || p.pos === 6 || p.pos === 7))) score -= 600;
             pList.forEach(p => {
                 const hubBonus = (p.pos === 2 || p.pos === 9) ? 150 : 0;
                 score += (p.player === 'Blue' ? hubBonus : -hubBonus);
@@ -349,17 +335,16 @@
 
         function updateHUD() {
             const indicator = document.getElementById('turn-indicator');
-            if (state.winner) { indicator.innerText = state.winner + " WINS!"; indicator.style.background = "#2ecc71"; indicator.style.color = "white"; }
-            else { 
-                indicator.innerText = state.currentTurn + "'s Turn"; 
-                indicator.style.background = (state.currentTurn === 'Red') ? "rgba(231, 76, 60, 0.3)" : "rgba(52, 152, 219, 0.3)";
-                indicator.style.color = (state.currentTurn === 'Red') ? 'var(--red-color)' : 'var(--blue-color)';
-            }
-            document.getElementById('game-mode-indicator').innerText = (state.mode === 'HvAI' ? `EXPERT AI` : "LOCAL PVP") + ` | ${state.difficulty} RULES`;
+            if (state.winner) { indicator.innerText = state.winner + " WINS!"; indicator.style.color = "white"; }
+            else { indicator.innerText = state.currentTurn + "'s Turn"; indicator.style.color = (state.currentTurn === 'Red') ? 'var(--red-color)' : 'var(--blue-color)'; }
+            document.getElementById('game-mode-indicator').innerText = (state.mode === 'HvAI' ? `SKILL: ${state.aiSkill}` : "LOCAL PVP") + ` | ${state.difficulty} RULES`;
         }
 
+        // NAVIGATION
         document.getElementById('p-vs-p-btn').onclick = () => { state.mode = 'HvH'; mainMenu.classList.add('hidden'); gameWrapper.classList.remove('hidden'); initGame(); };
         document.getElementById('p-vs-ai-btn').onclick = () => { state.mode = 'HvAI'; mainMenu.classList.add('hidden'); settingsScreen.classList.remove('hidden'); };
+        document.getElementById('rules-btn').onclick = () => { mainMenu.classList.add('hidden'); rulesScreen.classList.remove('hidden'); };
+        document.getElementById('rules-back-btn').onclick = () => { rulesScreen.classList.add('hidden'); mainMenu.classList.remove('hidden'); };
         document.getElementById('start-game-btn').onclick = () => { settingsScreen.classList.add('hidden'); gameWrapper.classList.remove('hidden'); initGame(); };
         document.getElementById('rotate-btn').onclick = () => boardContainer.classList.toggle('rotated');
         document.getElementById('back-to-menu-btn').onclick = () => { gameWrapper.classList.add('hidden'); mainMenu.classList.remove('hidden'); };

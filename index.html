@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dot Fight - Version 19.0</title>
+    <title>Dot Fight - Version 20.0</title>
     <style>
         :root {
             --board-width: 320px; --board-height: 520px; --dot-size: 38px; --pawn-size: 32px;
@@ -14,23 +14,23 @@
         body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: var(--bg-color); color: var(--text-color); overflow: hidden; }
         .hidden { display: none !important; }
         
+        /* Flat UI */
         .menu { text-align: center; max-width: 320px; }
-        .menu h1 { font-size: 3.5em; margin-bottom: 30px; color: var(--highlight-color); }
+        .menu h1 { font-size: 3.5em; margin-bottom: 25px; color: var(--highlight-color); }
         .menu-button { 
-            display: block; width: 250px; padding: 15px; font-size: 1.1em; font-weight: bold;
+            display: block; width: 260px; padding: 15px; font-size: 1.1em; font-weight: bold;
             margin: 12px auto; cursor: pointer; border: 2px solid var(--line-color); 
             border-radius: 4px; background: transparent; color: var(--text-color); 
-            transition: 0.2s;
         }
         .menu-button:hover { background-color: var(--highlight-color); border-color: var(--highlight-color); color: var(--bg-color); }
         
-        #rules-screen { text-align: left; padding: 25px; overflow-y: auto; max-height: 85vh; background: var(--container-bg); border-radius: 10px; border: 1px solid var(--line-color); }
-        #rules-screen h2 { color: var(--highlight-color); border-bottom: 2px solid var(--line-color); padding-bottom: 10px; margin-top: 0; }
-        #rules-screen ul { padding-left: 15px; list-style-type: none; }
-        #rules-screen li { margin-bottom: 15px; line-height: 1.5; font-size: 0.95em; position: relative; }
-        #rules-screen li::before { content: "•"; color: var(--highlight-color); font-weight: bold; display: inline-block; width: 1em; margin-left: -1em; }
+        #rules-screen { text-align: left; padding: 25px; overflow-y: auto; max-height: 85vh; background: var(--container-bg); border-radius: 8px; border: 1px solid var(--line-color); }
+        #rules-screen h2 { color: var(--highlight-color); margin-top: 0; border-bottom: 1px solid var(--line-color); padding-bottom: 5px; }
+        #rules-screen ul { padding-left: 0; list-style: none; }
+        #rules-screen li { margin-bottom: 12px; line-height: 1.4; font-size: 0.9em; position: relative; padding-left: 15px; }
+        #rules-screen li::before { content: "•"; color: var(--highlight-color); position: absolute; left: 0; font-weight: bold; }
 
-        .options-group { margin: 15px 0; text-align: center; }
+        .options-group { margin: 15px 0; }
         .option-button { 
             display: inline-block; padding: 8px 12px; font-size: 0.85em; margin: 4px; 
             cursor: pointer; border: 1px solid var(--line-color); border-radius: 4px; 
@@ -38,8 +38,9 @@
         }
         .option-button.selected { background-color: var(--blue-color); border-color: var(--blue-color); }
         
+        /* Board Visuals */
         .game-wrapper { background-color: var(--container-bg); padding: 20px; border-radius: 10px; width: var(--board-width); }
-        .hud { margin-bottom: 20px; text-align: center; }
+        .hud { margin-bottom: 15px; text-align: center; }
         #turn-indicator { font-size: 1.8em; font-weight: bold; height: 40px; }
         
         #board-container { position: relative; width: var(--board-width); height: var(--board-height); margin: 0 auto; transition: 0.5s; }
@@ -52,15 +53,15 @@
             transform: translate(-50%, -50%); display: flex; justify-content: center; align-items: center; 
         }
         .pawn { width: var(--pawn-size); height: var(--pawn-size); border-radius: 50%; pointer-events: none; }
-        .red-pawn { background-color: var(--red-color); border: 2px solid #922b21; }
-        .blue-pawn { background-color: var(--blue-color); border: 2px solid #1f618d; }
+        .red-pawn { background-color: var(--red-color); }
+        .blue-pawn { background-color: var(--blue-color); }
         
         .selected { box-shadow: 0 0 0 4px var(--highlight-color); }
-        .possible-move { background-color: var(--move-color) !important; opacity: 0.8; }
-        .penalty-pawn { box-shadow: 0 0 15px 5px var(--danger-color); }
+        .possible-move { background-color: var(--move-color) !important; opacity: 0.7; }
+        .penalty-pawn { border: 4px solid var(--danger-color); box-sizing: border-box; }
 
         .controls { margin-top: 20px; display: flex; gap: 5px; }
-        .game-button { padding: 8px; font-size: 0.8em; cursor: pointer; border: 1px solid var(--line-color); background: transparent; color: var(--text-color); flex: 1; }
+        .game-button { padding: 10px; font-size: 0.8em; cursor: pointer; border: 1px solid var(--line-color); background: transparent; color: var(--text-color); flex: 1; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -74,7 +75,7 @@
 
 <div id="rules-screen" class="menu hidden">
     <h2>Game Rules</h2>
-    <ul>
+    <ul id="rules-list">
         <li><strong>Objective:</strong> Capture all of the opponent's pawns to win.</li>
         <li><strong>Movement:</strong> Pawns move one space to an adjacent, empty dot along a line.</li>
         <li><strong>Capture:</strong> Jump over an adjacent opponent's pawn to an empty dot directly behind it in a straight line.</li>
@@ -94,7 +95,7 @@
         <button class="option-button selected" data-ai-skill="Hard">Expert</button>
     </div>
     <div class="options-group">
-        <h3>Blocking Penalty</h3>
+        <h3>Stalemate Rule</h3>
         <button class="option-button selected" data-difficulty="Beginner">Skip Turn</button>
         <button class="option-button" data-difficulty="Intermediate">Remove Pawn</button>
         <button class="option-button" data-difficulty="Expert">Instant Loss</button>
@@ -116,162 +117,259 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const boardData = {
-            dots: { 1:{x:50,y:50}, 2:{x:160,y:50}, 3:{x:270,y:50}, 4:{x:160,y:150}, 5:{x:270,y:150}, 6:{x:160,y:250}, 7:{x:160,y:350}, 8:{x:50,y:350}, 9:{x:160,y:450}, 10:{x:50,y:450}, 11:{x:270,y:450} },
-            adjacencies: { 1:[2], 2:[1,3,4], 3:[2], 4:[2,5,6], 5:[4], 6:[4,7], 7:[6,8,9], 8:[7], 9:[7,10,11], 10:[9], 11:[9] },
-            captureLines: [ [1,2,3], [10,9,11], [2,4,6,7,9] ],
-            blueBasal: [1, 2, 3], redBasal: [9, 10, 11]
-        };
-        
-        let state = { pawns: {}, currentTurn: 'Red', mode: 'HvAI', aiSkill: 'Hard', difficulty: 'Beginner', selectedId: null, mustCaptureId: null, winner: null, history: [], gamePhase: 'playing' };
+document.addEventListener('DOMContentLoaded', () => {
+    const boardData = {
+        dots: { 1:{x:50,y:50}, 2:{x:160,y:50}, 3:{x:270,y:50}, 4:{x:160,y:150}, 5:{x:270,y:150}, 6:{x:160,y:250}, 7:{x:160,y:350}, 8:{x:50,y:350}, 9:{x:160,y:450}, 10:{x:50,y:450}, 11:{x:270,y:450} },
+        adjacencies: { 1:[2], 2:[1,3,4], 3:[2], 4:[2,5,6], 5:[4], 6:[4,7], 7:[6,8,9], 8:[7], 9:[7,10,11], 10:[9], 11:[9] },
+        captureLines: [ [1,2,3], [10,9,11], [2,4,6,7,9] ],
+        blueBasal: [1, 2, 3], redBasal: [9, 10, 11]
+    };
+    
+    let state = { pawns: {}, currentTurn: 'Red', mode: 'HvAI', aiSkill: 'Hard', difficulty: 'Beginner', selectedId: null, mustCaptureId: null, winner: null, history: [], gamePhase: 'playing' };
 
-        const mainMenu = document.getElementById('main-menu'), 
-              settingsScreen = document.getElementById('settings-screen'), 
-              rulesScreen = document.getElementById('rules-screen'),
-              gameWrapper = document.querySelector('.game-wrapper'), 
-              boardContainer = document.getElementById('board-container');
+    const mainMenu = document.getElementById('main-menu');
+    const settingsScreen = document.getElementById('settings-screen');
+    const rulesScreen = document.getElementById('rules-screen');
+    const gameWrapper = document.querySelector('.game-wrapper');
+    const boardContainer = document.getElementById('board-container');
 
-        function initGame() {
-            state.pawns = { 'r1':{id:'r1',player:'Red',pos:10}, 'r2':{id:'r2',player:'Red',pos:9}, 'r3':{id:'r3',player:'Red',pos:11}, 'b1':{id:'b1',player:'Blue',pos:1}, 'b2':{id:'b2',player:'Blue',pos:2}, 'b3':{id:'b3',player:'Blue',pos:3} };
-            state.currentTurn = 'Red'; state.winner = null; state.selectedId = null; state.mustCaptureId = null; state.history = []; state.gamePhase = 'playing';
-            renderBoard(); updateHUD();
-        }
+    function initGame() {
+        state.pawns = { 'r1':{id:'r1',player:'Red',pos:10}, 'r2':{id:'r2',player:'Red',pos:9}, 'r3':{id:'r3',player:'Red',pos:11}, 'b1':{id:'b1',player:'Blue',pos:1}, 'b2':{id:'b2',player:'Blue',pos:2}, 'b3':{id:'b3',player:'Blue',pos:3} };
+        state.currentTurn = 'Red'; state.winner = null; state.selectedId = null; state.mustCaptureId = null; state.history = []; state.gamePhase = 'playing';
+        renderBoard(); updateHUD();
+    }
 
-        function switchTurn() {
-            if (state.winner) return;
-            state.currentTurn = (state.currentTurn === 'Red') ? 'Blue' : 'Red';
-            state.selectedId = null; state.mustCaptureId = null;
-            updateHUD();
-            if (!playerHasMoves(state.currentTurn, state.pawns)) { applyPenalty("Stalemate"); return; }
-            if (state.mode === 'HvAI' && state.currentTurn === 'Blue') setTimeout(runAILogic, 600);
-        }
+    function switchTurn() {
+        if (state.winner) return;
+        state.currentTurn = (state.currentTurn === 'Red') ? 'Blue' : 'Red';
+        state.selectedId = null; state.mustCaptureId = null;
+        updateHUD();
+        if (!playerHasMoves(state.currentTurn, state.pawns)) { applyPenalty("Stalemate"); return; }
+        if (state.mode === 'HvAI' && state.currentTurn === 'Blue') setTimeout(runAILogic, 600);
+    }
 
-        function playerHasMoves(player, pawnSet) { return Object.values(pawnSet).filter(p => p.player === player).some(p => getAllLegalMoves(p.id, pawnSet).length > 0); }
+    function playerHasMoves(player, pawnSet) { return Object.values(pawnSet).filter(p => p.player === player).some(p => getAllLegalMoves(p.id, pawnSet).length > 0); }
 
-        function executeMove(pawnId, toPos, isCapture, capturedPos) {
-            const pawn = state.pawns[pawnId]; pawn.pos = toPos;
-            if (isCapture) {
-                const victim = Object.values(state.pawns).find(p => p.pos === capturedPos);
-                if (victim) delete state.pawns[victim.id];
-                if (getCaptures(pawnId, state.pawns).length > 0) {
-                    state.mustCaptureId = pawnId; renderBoard();
-                    if (state.mode === 'HvAI' && state.currentTurn === 'Blue') setTimeout(runAILogic, 600);
-                    return;
-                }
-            }
-            const hash = getBoardHash(state.pawns);
-            state.history.push(hash);
-            if (state.history.filter(h => h === hash).length >= 3) { applyPenalty("Repetition"); return; }
-            renderBoard(); if (!checkWin()) switchTurn();
-        }
-
-        function getBoardHash(pawns) { return Object.values(pawns).map(p => `${p.id}${p.pos}`).sort().join('|'); }
-
-        function applyPenalty(reason) {
-            state.gamePhase = 'penalty_wait';
-            const indicator = document.getElementById('turn-indicator'); indicator.innerText = reason;
-            setTimeout(() => {
-                if (state.difficulty === 'Beginner') { 
-                    state.gamePhase = 'playing'; 
-                    indicator.innerText = "Penalty: Skip Turn";
-                    setTimeout(switchTurn, 1000); 
-                }
-                else if (state.difficulty === 'Intermediate') { state.gamePhase = 'penalty'; renderBoard(); }
-                else { state.winner = (state.currentTurn === 'Red') ? 'Blue' : 'Red'; updateHUD(); }
-            }, 1000);
-        }
-
-        function runAILogic() {
-            if (state.winner || state.currentTurn !== 'Blue' || state.gamePhase !== 'playing') return;
-            const moves = getAvailableMoves('Blue', state.pawns);
-            if (moves.length === 0) return;
-            let choice = (state.aiSkill === 'Medium') ? minimax(state.pawns, 2, true).move : minimax(state.pawns, 5, true).move;
-            executeMove(choice.pawnId, choice.to, choice.isCapture, choice.capturedPos);
-        }
-
-        function minimax(pawns, depth, isAI) {
-            const availMoves = getAvailableMoves(isAI ? 'Blue' : 'Red', pawns);
-            if (depth === 0 || availMoves.length === 0) return { score: evaluateBoard(pawns) };
-            let bestMove = availMoves[0];
-            if (isAI) {
-                let bestScore = -Infinity;
-                for (let m of availMoves) {
-                    const res = minimax(simulateMove(pawns, m), depth - 1, false);
-                    if (res.score > bestScore) { bestScore = res.score; bestMove = m; }
-                }
-                return { score: bestScore, move: bestMove };
-            } else {
-                let bestScore = Infinity;
-                for (let m of availMoves) {
-                    const res = minimax(simulateMove(pawns, m), depth - 1, true);
-                    if (res.score < bestScore) { bestScore = res.score; bestMove = m; }
-                }
-                return { score: bestScore, move: bestMove };
+    function executeMove(pawnId, toPos, isCapture, capturedPos) {
+        const pawn = state.pawns[pawnId]; pawn.pos = toPos;
+        if (isCapture) {
+            const victim = Object.values(state.pawns).find(p => p.pos === capturedPos);
+            if (victim) delete state.pawns[victim.id];
+            if (getCaptures(pawnId, state.pawns).length > 0) {
+                state.mustCaptureId = pawnId; renderBoard();
+                if (state.mode === 'HvAI' && state.currentTurn === 'Blue') setTimeout(runAILogic, 600);
+                return;
             }
         }
+        const hash = Object.values(state.pawns).map(p => `${p.id}${p.pos}`).sort().join('|');
+        state.history.push(hash);
+        if (state.history.filter(h => h === hash).length >= 3) { renderBoard(); applyPenalty("Repetition"); return; }
+        renderBoard(); if (!checkWin()) switchTurn();
+    }
 
-        function evaluateBoard(pawns) {
-            const pList = Object.values(pawns);
-            const blueMoves = getAvailableMoves('Blue', pawns).length;
-            const redMoves = getAvailableMoves('Red', pawns).length;
-            const materialWeight = blueMoves < 2 ? 300 : 1000;
-            let score = (pList.filter(p => p.player === 'Blue').length - pList.filter(p => p.player === 'Red').length) * materialWeight;
-            score += (blueMoves * 120); score -= (redMoves * 120);
-            if (pList.some(p => p.player === 'Red' && (p.pos === 4 || p.pos === 6 || p.pos === 7))) score -= 600;
-            pList.forEach(p => {
-                const hubBonus = (p.pos === 2 || p.pos === 9) ? 150 : 0;
-                score += (p.player === 'Blue' ? hubBonus : -hubBonus);
-            });
-            return score;
+    function applyPenalty(reason) {
+        state.gamePhase = 'penalty_wait';
+        const indicator = document.getElementById('turn-indicator'); indicator.innerText = reason;
+        setTimeout(() => {
+            if (state.difficulty === 'Beginner') { state.gamePhase = 'playing'; switchTurn(); }
+            else if (state.difficulty === 'Intermediate') { state.gamePhase = 'penalty'; renderBoard(); }
+            else { state.winner = (state.currentTurn === 'Red') ? 'Blue' : 'Red'; updateHUD(); }
+        }, 1000);
+    }
+
+    function runAILogic() {
+        if (state.winner || state.currentTurn !== 'Blue' || state.gamePhase !== 'playing') return;
+        const moves = getAvailableMoves('Blue', state.pawns);
+        if (moves.length === 0) return;
+        let choice = (state.aiSkill === 'Medium') ? minimax(state.pawns, 2, true).move : minimax(state.pawns, 5, true).move;
+        executeMove(choice.pawnId, choice.to, choice.isCapture, choice.capturedPos);
+    }
+
+    function minimax(pawns, depth, isAI) {
+        const availMoves = getAvailableMoves(isAI ? 'Blue' : 'Red', pawns);
+        if (depth === 0 || availMoves.length === 0) return { score: evaluateBoard(pawns) };
+        let bestMove = availMoves[0];
+        if (isAI) {
+            let bestScore = -Infinity;
+            for (let m of availMoves) {
+                const res = minimax(simulateMove(pawns, m), depth - 1, false);
+                if (res.score > bestScore) { bestScore = res.score; bestMove = m; }
+            }
+            return { score: bestScore, move: bestMove };
+        } else {
+            let bestScore = Infinity;
+            for (let m of availMoves) {
+                const res = minimax(simulateMove(pawns, m), depth - 1, true);
+                if (res.score < bestScore) { bestScore = res.score; bestMove = m; }
+            }
+            return { score: bestScore, move: bestMove };
         }
+    }
 
-        function simulateMove(pawns, m) {
-            const next = JSON.parse(JSON.stringify(pawns));
-            next[m.pawnId].pos = m.to;
-            if (m.isCapture) { const v = Object.values(next).find(p => p.pos === m.capturedPos); if (v) delete next[v.id]; }
-            return next;
-        }
+    function evaluateBoard(pawns) {
+        const pList = Object.values(pawns);
+        const blueMoves = getAvailableMoves('Blue', pawns).length;
+        const redMoves = getAvailableMoves('Red', pawns).length;
+        const materialWeight = blueMoves < 2 ? 300 : 1000;
+        let score = (pList.filter(p => p.player === 'Blue').length - pList.filter(p => p.player === 'Red').length) * materialWeight;
+        score += (blueMoves * 120); score -= (redMoves * 120);
+        pList.forEach(p => {
+            const hubBonus = (p.pos === 2 || p.pos === 9) ? 150 : 0;
+            score += (p.player === 'Blue' ? hubBonus : -hubBonus);
+        });
+        return score;
+    }
 
-        function getAvailableMoves(player, pawnSet) {
-            const res = [];
-            Object.values(pawnSet).filter(p => p.player === player).forEach(p => {
-                getAllLegalMoves(p.id, pawnSet).forEach(m => res.push({pawnId: p.id, ...m}));
-            });
-            const caps = res.filter(m => m.isCapture);
-            return caps.length > 0 ? caps : res;
-        }
+    function simulateMove(pawns, m) {
+        const next = JSON.parse(JSON.stringify(pawns));
+        next[m.pawnId].pos = m.to;
+        if (m.isCapture) { const v = Object.values(next).find(p => p.pos === m.capturedPos); if (v) delete next[v.id]; }
+        return next;
+    }
 
-        function getAllLegalMoves(pawnId, pawnSet) {
-            const caps = getCaptures(pawnId, pawnSet);
-            return caps.length > 0 ? caps : getSimples(pawnId, pawnSet);
-        }
+    function getAvailableMoves(player, pawnSet) {
+        const res = [];
+        Object.values(pawnSet).filter(p => p.player === player).forEach(p => {
+            getAllLegalMoves(p.id, pawnSet).forEach(m => res.push({pawnId: p.id, ...m}));
+        });
+        const caps = res.filter(m => m.isCapture);
+        return caps.length > 0 ? caps : res;
+    }
 
-        function getCaptures(pawnId, pawnSet) {
-            const p = pawnSet[pawnId]; if (!p) return [];
-            const results = [];
-            boardData.captureLines.forEach(line => {
-                const idx = line.indexOf(p.pos);
-                if (idx !== -1) {
-                    [-1, 1].forEach(dir => {
-                        const mid = line[idx + dir], end = line[idx + dir * 2];
-                        if (end !== undefined) {
-                            const midP = Object.values(pawnSet).find(pawn => pawn.pos === mid);
-                            const endP = Object.values(pawnSet).find(pawn => pawn.pos === end);
-                            if (midP && midP.player !== p.player && !endP) results.push({to: end, isCapture: true, capturedPos: mid});
-                        }
-                    });
+    function getAllLegalMoves(pawnId, pawnSet) {
+        const caps = getCaptures(pawnId, pawnSet);
+        return caps.length > 0 ? caps : getSimples(pawnId, pawnSet);
+    }
+
+    function getCaptures(pawnId, pawnSet) {
+        const p = pawnSet[pawnId]; if (!p) return [];
+        const results = [];
+        boardData.captureLines.forEach(line => {
+            const idx = line.indexOf(p.pos);
+            if (idx !== -1) {
+                [-1, 1].forEach(dir => {
+                    const mid = line[idx + dir], end = line[idx + dir * 2];
+                    if (end !== undefined) {
+                        const midP = Object.values(pawnSet).find(pawn => pawn.pos === mid);
+                        const endP = Object.values(pawnSet).find(pawn => pawn.pos === end);
+                        if (midP && midP.player !== p.player && !endP) results.push({to: end, isCapture: true, capturedPos: mid});
+                    }
+                });
+            }
+        });
+        return results;
+    }
+
+    function getSimples(pawnId, pawnSet) {
+        const p = pawnSet[pawnId]; if (!p) return [];
+        const results = [];
+        const myBasal = (p.player === 'Blue') ? boardData.blueBasal : boardData.redBasal;
+        const myCenter = (p.player === 'Blue') ? 2 : 9;
+        const oppBasal = (p.player === 'Blue') ? boardData.redBasal : boardData.blueBasal;
+        const oppCenter = (p.player === 'Blue') ? 9 : 2;
+        (boardData.adjacencies[p.pos] || []).forEach(target => {
+            if (!Object.values(pawnSet).find(pawn => pawn.pos === target)) {
+                let allowed = true;
+                if (myBasal.includes(p.pos) && !myBasal.includes(target) && p.pos !== myCenter) allowed = false;
+                if (!oppBasal.includes(p.pos) && oppBasal.includes(target) && target !== oppCenter) allowed = false;
+                if (allowed) results.push({to: target, isCapture: false});
+            }
+        });
+        return results;
+    }
+
+    function checkWin() {
+        const r = Object.values(state.pawns).filter(p => p.player === 'Red').length, b = Object.values(state.pawns).filter(p => p.player === 'Blue').length;
+        if (r === 0) state.winner = 'Blue'; else if (b === 0) state.winner = 'Red';
+        if (state.winner) { updateHUD(); return true; }
+        return false;
+    }
+
+    function renderBoard() {
+        boardContainer.innerHTML = '';
+        const drawn = new Set();
+        for (let s in boardData.adjacencies) {
+            boardData.adjacencies[s].forEach(e => {
+                const k = [s, e].sort().join('-');
+                if (!drawn.has(k)) {
+                    const p1 = boardData.dots[s], p2 = boardData.dots[e];
+                    const line = document.createElement('div'); line.className = 'line'; line.style.width = Math.hypot(p2.x - p1.x, p2.y - p1.y) + "px"; line.style.left = p1.x + "px"; line.style.top = p1.y + "px"; line.style.transform = `rotate(${Math.atan2(p2.y - p1.y, p2.x - p1.x)}rad)`;
+                    boardContainer.appendChild(line); drawn.add(k);
                 }
             });
-            return results;
         }
+        for (let id in boardData.dots) {
+            const d = boardData.dots[id], dotEl = document.createElement('div');
+            dotEl.className = 'dot'; dotEl.style.left = d.x + 'px'; dotEl.style.top = d.y + 'px'; dotEl.onclick = () => onDotClick(parseInt(id));
+            const pawn = Object.values(state.pawns).find(p => p.pos === parseInt(id));
+            if (pawn) {
+                const pEl = document.createElement('div'); pEl.className = `pawn ${pawn.player.toLowerCase()}-pawn`;
+                if (state.selectedId === pawn.id) pEl.classList.add('selected');
+                if (state.gamePhase === 'penalty' && pawn.player === state.currentTurn) pEl.classList.add('penalty-pawn');
+                dotEl.appendChild(pEl);
+            }
+            if (state.selectedId) {
+                const moves = getAllLegalMoves(state.selectedId, state.pawns);
+                if (moves.find(m => m.to === parseInt(id))) dotEl.classList.add('possible-move');
+            }
+            boardContainer.appendChild(dotEl);
+        }
+    }
 
-        function getSimples(pawnId, pawnSet) {
-            const p = pawnSet[pawnId]; if (!p) return [];
-            const results = [];
-            const myBasal = (p.player === 'Blue') ? boardData.blueBasal : boardData.redBasal;
-            const myCenter = (p.player === 'Blue') ? 2 : 9;
-            const oppBasal = (p.player === 'Blue') ? boardData.redBasal : boardData.blueBasal;
-            const oppCenter = (p.player === 'Blue') ? 9 : 2;
-            (boardData.adjacencies[p.pos] || []).forEach(target => {
-                if (!Object.values(pawnSet).find(pawn => pawn.pos ===
+    function onDotClick(id) {
+        if (state.winner || state.gamePhase === 'penalty_wait') return;
+        if (state.gamePhase === 'penalty') {
+            const p = Object.values(state.pawns).find(p => p.pos === id);
+            if (p && p.player === state.currentTurn) { delete state.pawns[p.id]; state.gamePhase = 'playing'; renderBoard(); setTimeout(switchTurn, 600); }
+            return;
+        }
+        if (state.mode === 'HvAI' && state.currentTurn === 'Blue') return;
+        if (state.selectedId) {
+            const move = getAllLegalMoves(state.selectedId, state.pawns).find(m => m.to === id);
+            if (move) { executeMove(state.selectedId, id, move.isCapture, move.capturedPos); return; }
+        }
+        const pawn = Object.values(state.pawns).find(p => p.pos === id);
+        if (pawn && pawn.player === state.currentTurn) { if (state.mustCaptureId && state.mustCaptureId !== pawn.id) return; state.selectedId = pawn.id; renderBoard(); }
+    }
+
+    function updateHUD() {
+        const indicator = document.getElementById('turn-indicator');
+        if (state.winner) { indicator.innerText = state.winner + " WINS!"; indicator.style.color = "white"; }
+        else { indicator.innerText = state.currentTurn + "'s Turn"; indicator.style.color = (state.currentTurn === 'Red') ? 'var(--red-color)' : 'var(--blue-color)'; }
+        document.getElementById('game-mode-indicator').innerText = (state.mode === 'HvAI' ? `SKILL: ${state.aiSkill}` : "LOCAL PVP") + ` | ${state.difficulty === 'Beginner' ? 'EASY' : state.difficulty === 'Intermediate' ? 'NORMAL' : 'HARD'} RULES`;
+    }
+
+    // EVENT LISTENERS
+    if(document.getElementById('p-vs-p-btn')) {
+        document.getElementById('p-vs-p-btn').addEventListener('click', () => { state.mode = 'HvH'; mainMenu.classList.add('hidden'); gameWrapper.classList.remove('hidden'); initGame(); });
+    }
+    if(document.getElementById('p-vs-ai-btn')) {
+        document.getElementById('p-vs-ai-btn').addEventListener('click', () => { state.mode = 'HvAI'; mainMenu.classList.add('hidden'); settingsScreen.classList.remove('hidden'); });
+    }
+    if(document.getElementById('rules-btn')) {
+        document.getElementById('rules-btn').addEventListener('click', () => { mainMenu.classList.add('hidden'); rulesScreen.classList.remove('hidden'); });
+    }
+    if(document.getElementById('rules-back-btn')) {
+        document.getElementById('rules-back-btn').addEventListener('click', () => { rulesScreen.classList.add('hidden'); mainMenu.classList.remove('hidden'); });
+    }
+    if(document.getElementById('start-game-btn')) {
+        document.getElementById('start-game-btn').addEventListener('click', () => { settingsScreen.classList.add('hidden'); gameWrapper.classList.remove('hidden'); initGame(); });
+    }
+    if(document.getElementById('rotate-btn')) {
+        document.getElementById('rotate-btn').addEventListener('click', () => boardContainer.classList.toggle('rotated'));
+    }
+    if(document.getElementById('back-to-menu-btn')) {
+        document.getElementById('back-to-menu-btn').addEventListener('click', () => { gameWrapper.classList.add('hidden'); mainMenu.classList.remove('hidden'); });
+    }
+    if(document.getElementById('new-game-btn')) {
+        document.getElementById('new-game-btn').addEventListener('click', initGame);
+    }
+    
+    settingsScreen.addEventListener('click', e => { 
+        if (e.target.dataset.aiSkill) { state.aiSkill = e.target.dataset.aiSkill; document.querySelectorAll('[data-ai-skill]').forEach(b => b.classList.remove('selected')); e.target.classList.add('selected'); } 
+        if (e.target.dataset.difficulty) { state.difficulty = e.target.dataset.difficulty; document.querySelectorAll('[data-difficulty]').forEach(b => b.classList.remove('selected')); e.target.classList.add('selected'); } 
+    });
+});
+</script>
+</body>
+</html>

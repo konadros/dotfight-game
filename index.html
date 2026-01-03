@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dot Fight - Version 18.0</title>
+    <title>Dot Fight - Version 19.0</title>
     <style>
         :root {
             --board-width: 320px; --board-height: 520px; --dot-size: 38px; --pawn-size: 32px;
@@ -14,8 +14,7 @@
         body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: var(--bg-color); color: var(--text-color); overflow: hidden; }
         .hidden { display: none !important; }
         
-        /* Menu & Flat Buttons */
-        .menu { text-align: center; max-width: 300px; }
+        .menu { text-align: center; max-width: 320px; }
         .menu h1 { font-size: 3.5em; margin-bottom: 30px; color: var(--highlight-color); }
         .menu-button { 
             display: block; width: 250px; padding: 15px; font-size: 1.1em; font-weight: bold;
@@ -25,21 +24,20 @@
         }
         .menu-button:hover { background-color: var(--highlight-color); border-color: var(--highlight-color); color: var(--bg-color); }
         
-        /* Rules Screen Styling */
-        #rules-screen { text-align: left; padding: 20px; overflow-y: auto; max-height: 80vh; background: var(--container-bg); border-radius: 10px; }
-        #rules-screen h2 { color: var(--highlight-color); border-bottom: 1px solid var(--line-color); padding-bottom: 10px; }
-        #rules-screen ul { padding-left: 20px; }
-        #rules-screen li { margin-bottom: 10px; line-height: 1.4; }
+        #rules-screen { text-align: left; padding: 25px; overflow-y: auto; max-height: 85vh; background: var(--container-bg); border-radius: 10px; border: 1px solid var(--line-color); }
+        #rules-screen h2 { color: var(--highlight-color); border-bottom: 2px solid var(--line-color); padding-bottom: 10px; margin-top: 0; }
+        #rules-screen ul { padding-left: 15px; list-style-type: none; }
+        #rules-screen li { margin-bottom: 15px; line-height: 1.5; font-size: 0.95em; position: relative; }
+        #rules-screen li::before { content: "•"; color: var(--highlight-color); font-weight: bold; display: inline-block; width: 1em; margin-left: -1em; }
 
         .options-group { margin: 15px 0; text-align: center; }
         .option-button { 
-            display: inline-block; padding: 8px 14px; font-size: 0.9em; margin: 4px; 
+            display: inline-block; padding: 8px 12px; font-size: 0.85em; margin: 4px; 
             cursor: pointer; border: 1px solid var(--line-color); border-radius: 4px; 
             background: transparent; color: var(--text-color); 
         }
         .option-button.selected { background-color: var(--blue-color); border-color: var(--blue-color); }
         
-        /* Game Board Visuals (Flat) */
         .game-wrapper { background-color: var(--container-bg); padding: 20px; border-radius: 10px; width: var(--board-width); }
         .hud { margin-bottom: 20px; text-align: center; }
         #turn-indicator { font-size: 1.8em; font-weight: bold; height: 40px; }
@@ -77,11 +75,13 @@
 <div id="rules-screen" class="menu hidden">
     <h2>Game Rules</h2>
     <ul>
-        <li><strong>Movement:</strong> Move pawns along the grey lines to adjacent empty dots.</li>
-        <li><strong>The Basal Row:</strong> Your starting row (top for Blue, bottom for Red). You can only leave or enter your row through the <strong>center dot</strong>.</li>
-        <li><strong>Capturing:</strong> Jump over an opponent's pawn into an empty space to remove it. Multiple captures are mandatory if available.</li>
-        <li><strong>Stalemate:</strong> If you have no legal moves, a penalty is applied based on the chosen rule set (Skip turn, remove pawn, or lose match).</li>
-        <li><strong>Repetition:</strong> Moving between the same dots 3 times triggers a penalty.</li>
+        <li><strong>Objective:</strong> Capture all of the opponent's pawns to win.</li>
+        <li><strong>Movement:</strong> Pawns move one space to an adjacent, empty dot along a line.</li>
+        <li><strong>Capture:</strong> Jump over an adjacent opponent's pawn to an empty dot directly behind it in a straight line.</li>
+        <li><strong>Chain Captures:</strong> After a capture, if the same pawn can make another valid capture, it must do so.</li>
+        <li><strong>Starting Lines:</strong> Pawns can only enter or exit their starting row through the central dot.</li>
+        <li><strong>Stalemate:</strong> If a player has no legal moves, the penalty depends on the chosen rules (skip turn, lose pawn, or lose game).</li>
+        <li><strong>Repetition:</strong> If a board position is repeated 3 times in a row, the player causing the repeat is penalized based on the chosen rule.</li>
     </ul>
     <button id="rules-back-btn" class="menu-button">BACK</button>
 </div>
@@ -95,8 +95,9 @@
     </div>
     <div class="options-group">
         <h3>Blocking Penalty</h3>
-        <button class="option-button selected" data-difficulty="Expert">Instant Loss</button>
+        <button class="option-button selected" data-difficulty="Beginner">Skip Turn</button>
         <button class="option-button" data-difficulty="Intermediate">Remove Pawn</button>
+        <button class="option-button" data-difficulty="Expert">Instant Loss</button>
     </div>
     <button id="start-game-btn" class="menu-button">START FIGHT</button>
 </div>
@@ -123,7 +124,7 @@
             blueBasal: [1, 2, 3], redBasal: [9, 10, 11]
         };
         
-        let state = { pawns: {}, currentTurn: 'Red', mode: 'HvAI', aiSkill: 'Hard', difficulty: 'Expert', selectedId: null, mustCaptureId: null, winner: null, history: [], gamePhase: 'playing' };
+        let state = { pawns: {}, currentTurn: 'Red', mode: 'HvAI', aiSkill: 'Hard', difficulty: 'Beginner', selectedId: null, mustCaptureId: null, winner: null, history: [], gamePhase: 'playing' };
 
         const mainMenu = document.getElementById('main-menu'), 
               settingsScreen = document.getElementById('settings-screen'), 
@@ -171,7 +172,12 @@
             state.gamePhase = 'penalty_wait';
             const indicator = document.getElementById('turn-indicator'); indicator.innerText = reason;
             setTimeout(() => {
-                if (state.difficulty === 'Intermediate') { state.gamePhase = 'penalty'; renderBoard(); }
+                if (state.difficulty === 'Beginner') { 
+                    state.gamePhase = 'playing'; 
+                    indicator.innerText = "Penalty: Skip Turn";
+                    setTimeout(switchTurn, 1000); 
+                }
+                else if (state.difficulty === 'Intermediate') { state.gamePhase = 'penalty'; renderBoard(); }
                 else { state.winner = (state.currentTurn === 'Red') ? 'Blue' : 'Red'; updateHUD(); }
             }, 1000);
         }
@@ -207,7 +213,6 @@
 
         function evaluateBoard(pawns) {
             const pList = Object.values(pawns);
-            const hash = getBoardHash(pawns);
             const blueMoves = getAvailableMoves('Blue', pawns).length;
             const redMoves = getAvailableMoves('Red', pawns).length;
             const materialWeight = blueMoves < 2 ? 300 : 1000;
@@ -269,88 +274,4 @@
             const oppBasal = (p.player === 'Blue') ? boardData.redBasal : boardData.blueBasal;
             const oppCenter = (p.player === 'Blue') ? 9 : 2;
             (boardData.adjacencies[p.pos] || []).forEach(target => {
-                if (!Object.values(pawnSet).find(pawn => pawn.pos === target)) {
-                    let allowed = true;
-                    if (myBasal.includes(p.pos) && !myBasal.includes(target) && p.pos !== myCenter) allowed = false;
-                    if (!oppBasal.includes(p.pos) && oppBasal.includes(target) && target !== oppCenter) allowed = false;
-                    if (allowed) results.push({to: target, isCapture: false});
-                }
-            });
-            return results;
-        }
-
-        function checkWin() {
-            const r = Object.values(state.pawns).filter(p => p.player === 'Red').length, b = Object.values(state.pawns).filter(p => p.player === 'Blue').length;
-            if (r === 0) state.winner = 'Blue'; else if (b === 0) state.winner = 'Red';
-            if (state.winner) { updateHUD(); return true; }
-            return false;
-        }
-
-        function renderBoard() {
-            boardContainer.innerHTML = '';
-            const drawn = new Set();
-            for (let s in boardData.adjacencies) {
-                boardData.adjacencies[s].forEach(e => {
-                    const k = [s, e].sort().join('-');
-                    if (!drawn.has(k)) {
-                        const p1 = boardData.dots[s], p2 = boardData.dots[e];
-                        const line = document.createElement('div'); line.className = 'line'; line.style.width = Math.hypot(p2.x - p1.x, p2.y - p1.y) + "px"; line.style.left = p1.x + "px"; line.style.top = p1.y + "px"; line.style.transform = `rotate(${Math.atan2(p2.y - p1.y, p2.x - p1.x)}rad)`;
-                        boardContainer.appendChild(line); drawn.add(k);
-                    }
-                });
-            }
-            for (let id in boardData.dots) {
-                const d = boardData.dots[id], dotEl = document.createElement('div');
-                dotEl.className = 'dot'; dotEl.style.left = d.x + 'px'; dotEl.style.top = d.y + 'px'; dotEl.onclick = () => onDotClick(parseInt(id));
-                const pawn = Object.values(state.pawns).find(p => p.pos === parseInt(id));
-                if (pawn) {
-                    const pEl = document.createElement('div'); pEl.className = `pawn ${pawn.player.toLowerCase()}-pawn`;
-                    if (state.selectedId === pawn.id) pEl.classList.add('selected');
-                    if (state.gamePhase === 'penalty' && pawn.player === state.currentTurn) pEl.classList.add('penalty-pawn');
-                    dotEl.appendChild(pEl);
-                }
-                if (state.selectedId) {
-                    const move = getAllLegalMoves(state.selectedId, state.pawns).find(m => m.to === parseInt(id));
-                    if (move) dotEl.classList.add('possible-move');
-                }
-                boardContainer.appendChild(dotEl);
-            }
-        }
-
-        function onDotClick(id) {
-            if (state.winner || state.gamePhase === 'penalty_wait') return;
-            if (state.gamePhase === 'penalty') {
-                const p = Object.values(state.pawns).find(p => p.pos === id);
-                if (p && p.player === state.currentTurn) { delete state.pawns[p.id]; state.gamePhase = 'playing'; renderBoard(); setTimeout(switchTurn, 600); }
-                return;
-            }
-            if (state.mode === 'HvAI' && state.currentTurn === 'Blue') return;
-            if (state.selectedId) {
-                const move = getAllLegalMoves(state.selectedId, state.pawns).find(m => m.to === id);
-                if (move) { executeMove(state.selectedId, id, move.isCapture, move.capturedPos); return; }
-            }
-            const pawn = Object.values(state.pawns).find(p => p.pos === id);
-            if (pawn && pawn.player === state.currentTurn) { if (state.mustCaptureId && state.mustCaptureId !== pawn.id) return; state.selectedId = pawn.id; renderBoard(); }
-        }
-
-        function updateHUD() {
-            const indicator = document.getElementById('turn-indicator');
-            if (state.winner) { indicator.innerText = state.winner + " WINS!"; indicator.style.color = "white"; }
-            else { indicator.innerText = state.currentTurn + "'s Turn"; indicator.style.color = (state.currentTurn === 'Red') ? 'var(--red-color)' : 'var(--blue-color)'; }
-            document.getElementById('game-mode-indicator').innerText = (state.mode === 'HvAI' ? `SKILL: ${state.aiSkill}` : "LOCAL PVP") + ` | ${state.difficulty} RULES`;
-        }
-
-        // NAVIGATION
-        document.getElementById('p-vs-p-btn').onclick = () => { state.mode = 'HvH'; mainMenu.classList.add('hidden'); gameWrapper.classList.remove('hidden'); initGame(); };
-        document.getElementById('p-vs-ai-btn').onclick = () => { state.mode = 'HvAI'; mainMenu.classList.add('hidden'); settingsScreen.classList.remove('hidden'); };
-        document.getElementById('rules-btn').onclick = () => { mainMenu.classList.add('hidden'); rulesScreen.classList.remove('hidden'); };
-        document.getElementById('rules-back-btn').onclick = () => { rulesScreen.classList.add('hidden'); mainMenu.classList.remove('hidden'); };
-        document.getElementById('start-game-btn').onclick = () => { settingsScreen.classList.add('hidden'); gameWrapper.classList.remove('hidden'); initGame(); };
-        document.getElementById('rotate-btn').onclick = () => boardContainer.classList.toggle('rotated');
-        document.getElementById('back-to-menu-btn').onclick = () => { gameWrapper.classList.add('hidden'); mainMenu.classList.remove('hidden'); };
-        document.getElementById('new-game-btn').onclick = initGame;
-        settingsScreen.onclick = e => { if (e.target.dataset.aiSkill) { state.aiSkill = e.target.dataset.aiSkill; document.querySelectorAll('[data-ai-skill]').forEach(b => b.classList.remove('selected')); e.target.classList.add('selected'); } if (e.target.dataset.difficulty) { state.difficulty = e.target.dataset.difficulty; document.querySelectorAll('[data-difficulty]').forEach(b => b.classList.remove('selected')); e.target.classList.add('selected'); } };
-    });
-</script>
-</body>
-</html>
+                if (!Object.values(pawnSet).find(pawn => pawn.pos ===

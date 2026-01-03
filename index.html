@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dot Fight - Version 14.0</title>
+    <title>Dot Fight - Version 15.0</title>
     <style>
         :root {
             --board-width: 300px; --board-height: 500px; --dot-size: 40px; --pawn-size: 32px;
@@ -46,19 +46,18 @@
 </div>
 
 <div id="settings-screen" class="menu hidden">
-    <h1>AI Rules</h1>
+    <h1>Match Setup</h1>
     <div class="options-group">
-        <h3>Intelligence</h3>
-        <button class="option-button" data-ai-skill="Easy">Easy</button>
+        <h3>Difficulty</h3>
         <button class="option-button selected" data-ai-skill="Hard">Expert</button>
+        <button class="option-button" data-ai-skill="Medium">Normal</button>
     </div>
     <div class="options-group">
-        <h3>Penalty Mode</h3>
-        <button class="option-button selected" data-difficulty="Beginner">Skip Turn</button>
+        <h3>Stalemate Rule</h3>
+        <button class="option-button selected" data-difficulty="Expert">Insta-Loss</button>
         <button class="option-button" data-difficulty="Intermediate">Remove Pawn</button>
-        <button class="option-button" data-difficulty="Expert">Instant Loss</button>
     </div>
-    <button id="start-game-btn" class="menu-button">Start Battle</button>
+    <button id="start-game-btn" class="menu-button">Battle!</button>
 </div>
 
 <div class="game-wrapper hidden">
@@ -83,7 +82,7 @@
             blueBasal: [1, 2, 3], redBasal: [9, 10, 11]
         };
         
-        let state = { pawns: {}, currentTurn: 'Red', mode: 'HvAI', aiSkill: 'Hard', difficulty: 'Beginner', selectedId: null, mustCaptureId: null, winner: null, history: [], gamePhase: 'playing' };
+        let state = { pawns: {}, currentTurn: 'Red', mode: 'HvAI', aiSkill: 'Hard', difficulty: 'Expert', selectedId: null, mustCaptureId: null, winner: null, history: [], gamePhase: 'playing' };
 
         const mainMenu = document.getElementById('main-menu'), settingsScreen = document.getElementById('settings-screen'), gameWrapper = document.querySelector('.game-wrapper'), boardContainer = document.getElementById('board-container');
 
@@ -98,11 +97,11 @@
             state.currentTurn = (state.currentTurn === 'Red') ? 'Blue' : 'Red';
             state.selectedId = null; state.mustCaptureId = null;
             updateHUD();
-            if (!playerHasMoves(state.currentTurn)) { applyPenalty("Stalemate"); return; }
+            if (!playerHasMoves(state.currentTurn, state.pawns)) { applyPenalty("Stalemate"); return; }
             if (state.mode === 'HvAI' && state.currentTurn === 'Blue') setTimeout(runAILogic, 600);
         }
 
-        function playerHasMoves(player) { return Object.values(state.pawns).filter(p => p.player === player).some(p => getAllLegalMoves(p.id, state.pawns).length > 0); }
+        function playerHasMoves(player, pawnSet) { return Object.values(pawnSet).filter(p => p.player === player).some(p => getAllLegalMoves(p.id, pawnSet).length > 0); }
 
         function executeMove(pawnId, toPos, isCapture, capturedPos) {
             const pawn = state.pawns[pawnId]; pawn.pos = toPos;
@@ -115,9 +114,9 @@
                     return;
                 }
             }
-            const currentHash = getBoardHash(state.pawns);
-            state.history.push(currentHash);
-            if (state.history.filter(h => h === currentHash).length >= 3) { applyPenalty("Repetition"); return; }
+            const hash = getBoardHash(state.pawns);
+            state.history.push(hash);
+            if (state.history.filter(h => h === hash).length >= 3) { applyPenalty("Repetition"); return; }
             renderBoard(); if (!checkWin()) switchTurn();
         }
 
@@ -127,8 +126,7 @@
             state.gamePhase = 'penalty_wait';
             const indicator = document.getElementById('turn-indicator'); indicator.innerText = reason;
             setTimeout(() => {
-                if (state.difficulty === 'Beginner') { state.gamePhase = 'playing'; switchTurn(); }
-                else if (state.difficulty === 'Intermediate') { state.gamePhase = 'penalty'; renderBoard(); }
+                if (state.difficulty === 'Intermediate') { state.gamePhase = 'penalty'; renderBoard(); }
                 else { state.winner = (state.currentTurn === 'Red') ? 'Blue' : 'Red'; updateHUD(); }
             }, 1000);
         }
@@ -137,7 +135,7 @@
             if (state.winner || state.currentTurn !== 'Blue' || state.gamePhase !== 'playing') return;
             const moves = getAvailableMoves('Blue', state.pawns);
             if (moves.length === 0) return;
-            let choice = (state.aiSkill === 'Easy') ? moves[Math.floor(Math.random() * moves.length)] : minimax(state.pawns, 4, true).move;
+            let choice = (state.aiSkill === 'Medium') ? minimax(state.pawns, 2, true).move : minimax(state.pawns, 4, true).move;
             executeMove(choice.pawnId, choice.to, choice.isCapture, choice.capturedPos);
         }
 
@@ -162,15 +160,24 @@
             }
         }
 
+        // --- ENHANCED EVALUATION ---
         function evaluateBoard(pawns) {
             const pList = Object.values(pawns);
             const hash = getBoardHash(pawns);
             let score = (pList.filter(p => p.player === 'Blue').length - pList.filter(p => p.player === 'Red').length) * 1000;
-            if (state.history.includes(hash)) score -= 200; // Repetition penalty in "mind"
+            
+            // Mobility is critical to avoid blockades
+            const blueMoves = getAvailableMoves('Blue', pawns).length;
+            const redMoves = getAvailableMoves('Red', pawns).length;
+            score += (blueMoves * 20);
+            score -= (redMoves * 20);
+
+            if (state.history.includes(hash)) score -= 300; 
+
             pList.forEach(p => {
-                const centerBonus = (p.pos === 2 || p.pos === 9) ? 50 : 0;
-                const progressBonus = (p.player === 'Blue') ? (p.pos > 3 ? 20 : 0) : (p.pos < 9 ? 20 : 0);
-                score += (p.player === 'Blue' ? (centerBonus + progressBonus) : -(centerBonus + progressBonus));
+                const centerBonus = (p.pos === 2 || p.pos === 9) ? 80 : 0;
+                const progress = (p.player === 'Blue') ? (p.pos > 3 ? 40 : 0) : (p.pos < 9 ? 40 : 0);
+                score += (p.player === 'Blue' ? (centerBonus + progress) : -(centerBonus + progress));
             });
             return score;
         }
@@ -224,14 +231,10 @@
             const oppCenter = (p.player === 'Blue') ? 9 : 2;
 
             (boardData.adjacencies[p.pos] || []).forEach(target => {
-                const isOccupied = Object.values(pawnSet).find(pawn => pawn.pos === target);
-                if (!isOccupied) {
+                if (!Object.values(pawnSet).find(pawn => pawn.pos === target)) {
                     let allowed = true;
-                    // Leaving Basal Row rule
                     if (myBasal.includes(p.pos) && !myBasal.includes(target) && p.pos !== myCenter) allowed = false;
-                    // Entering Opponent Basal Row rule
                     if (!oppBasal.includes(p.pos) && oppBasal.includes(target) && target !== oppCenter) allowed = false;
-
                     if (allowed) results.push({to: target, isCapture: false});
                 }
             });
